@@ -310,8 +310,10 @@
                     <h3>관리자 설정</h3>
                     <button class="control-btn primary" onclick="startNewPoll()">새 투표 시작</button>
                     <button class="control-btn danger" onclick="resetVotes()">투표 초기화</button>
+                    <button class="control-btn primary" onclick="openClientWindow()">클라이언트 창 열기 (테스트용)</button>
                     <div style="margin-top: 10px; font-size: 0.8em; color: #666;">
-                        💡 초기화 버튼을 클릭하면 즉시 작동합니다!!!!
+                        💡 초기화 버튼을 클릭하면 즉시 작동합니다!<br>
+                        🔧 테스트: "클라이언트 창 열기"로 동일 브라우저에서 확인 가능
                     </div>
                 </div>
             </div>
@@ -904,6 +906,13 @@
                 selectedOptions = [];
                 updateSelectionDisplay();
             }
+        }
+
+        // 클라이언트 창 열기 (테스트용)
+        function openClientWindow() {
+            const baseUrl = window.location.origin + window.location.pathname;
+            const clientUrl = baseUrl + '?mode=client';
+            window.open(clientUrl, '_blank', 'width=500,height=800');
         }
 
         // 투표 초기화 (QR코드 갱신 포함)
