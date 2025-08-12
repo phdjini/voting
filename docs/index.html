@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QR코드 실시간 투표 시스템 - 2개 선택(단일전공은 1개+없음)</title>
+    <title>QR코드 실시간 투표 시스템 - 2개 선택</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
     <style>
@@ -333,7 +333,8 @@
         <div class="vote-form" id="voteForm">
             <h3>📊 투표에 참여하세요!</h3>
             <p style="color: #666; margin-bottom: 15px; font-size: 0.9em;">
-                선호하는 <strong>2개의 학과</strong>를 터치해서 선택하세요
+                선호하는 <strong>2개의 학과</strong>를 터치해서 선택하세요<br>
+                <small style="color: #999;">💡 언제든지 다시 투표할 수 있습니다</small>
             </p>
             
             <div class="options-list" id="optionsList">
@@ -490,29 +491,18 @@
             }
         }
 
-        // 투표 제출 함수
+        // 투표 제출 함수 (중복 투표 허용)
         function submitVote() {
             if (selectedOptions.length !== 2) {
                 alert('정확히 2개를 선택해주세요!');
                 return;
             }
 
-            // 이미 투표했는지 확인
-            const votedDevices = JSON.parse(localStorage.getItem('votedDevices') || '[]');
-            if (votedDevices.includes(deviceId)) {
-                alert('이미 투표하셨습니다! 🗳️');
-                return;
-            }
-
-            // 투표 실행
+            // 투표 실행 (중복 투표 방지 제거)
             const selectedDepts = selectedOptions.map(i => departments[i]);
             selectedDepts.forEach(dept => {
                 voteData[dept]++;
             });
-
-            // 투표한 기기 목록에 추가
-            votedDevices.push(deviceId);
-            localStorage.setItem('votedDevices', JSON.stringify(votedDevices));
             
             // 데이터 저장 및 동기화
             saveVoteData();
@@ -534,7 +524,7 @@
             localStorage.setItem('lastUpdate', Date.now().toString());
         }
 
-        // 투표 완료 후 실시간 결과 표시
+        // 투표 완료 후 실시간 결과 표시 (다시 투표 버튼 추가)
         function showVoteResult(selectedDepts) {
             // 투표 폼 숨기기
             document.getElementById('voteForm').style.display = 'none';
@@ -543,12 +533,24 @@
             const resultDiv = document.getElementById('voteResult');
             resultDiv.style.display = 'block';
             
-            // 투표 완료 메시지 추가
+            // 투표 완료 메시지 추가 (다시 투표 버튼 포함)
             const completionMessage = document.createElement('div');
             completionMessage.innerHTML = `
                 <div style="text-align: center; padding: 20px; background: linear-gradient(45deg, #28a745, #20c997); border-radius: 15px; color: white; margin-bottom: 20px;">
                     <h3 style="margin: 0 0 10px 0;">🎉 투표 완료!</h3>
-                    <p style="margin: 0; font-size: 0.9em;">선택: ${selectedDepts.join(', ')}</p>
+                    <p style="margin: 0 0 15px 0; font-size: 0.9em;">선택: ${selectedDepts.join(', ')}</p>
+                    <button onclick="resetVoteForm()" style="
+                        background: rgba(255,255,255,0.2); 
+                        color: white; 
+                        border: 2px solid white; 
+                        border-radius: 8px; 
+                        padding: 10px 20px; 
+                        cursor: pointer; 
+                        font-weight: 600;
+                        transition: all 0.3s ease;
+                    " onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
+                        🔄 다시 투표하기
+                    </button>
                 </div>
             `;
             resultDiv.insertBefore(completionMessage, resultDiv.firstChild);
@@ -556,6 +558,33 @@
             // 클라이언트용 차트 초기화 및 표시
             initClientChart();
             updateClientChart();
+        }
+
+        // 투표 폼으로 돌아가기
+        function resetVoteForm() {
+            // 결과 화면 숨기기
+            document.getElementById('voteResult').style.display = 'none';
+            document.getElementById('voteResult').innerHTML = `
+                <div style="background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);">
+                    <h2 style="text-align: center; color: #333; margin-bottom: 20px;">📈 실시간 결과</h2>
+                    <canvas id="clientChart" width="400" height="300"></canvas>
+                    <div class="client-stats" id="clientStats" style="text-align: center; margin-top: 20px; color: #666;">
+                        <p>총 투표수: <span id="clientTotalVotes">0</span>표</p>
+                    </div>
+                </div>
+            `;
+            
+            // 투표 폼 다시 표시
+            document.getElementById('voteForm').style.display = 'block';
+            
+            // 선택 상태 초기화
+            selectedOptions = [];
+            document.querySelectorAll('.option-item').forEach(item => {
+                item.classList.remove('selected');
+            });
+            updateSelectionDisplay();
+            
+            console.log('투표 폼이 초기화되었습니다. 다시 투표할 수 있습니다.');
         }
 
         // 클라이언트용 차트 초기화
