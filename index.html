@@ -222,20 +222,6 @@
             transform: none;
         }
 
-        .selected-preview {
-            margin-top: 15px;
-            padding: 15px;
-            background: linear-gradient(45deg, #e8f5e8, #f0f8f0);
-            border-radius: 8px;
-            border-left: 4px solid #28a745;
-        }
-
-        .selected-preview div {
-            margin-top: 8px;
-            font-weight: 500;
-            color: #155724;
-        }
-
         .stats {
             margin-top: 20px;
             text-align: center;
@@ -296,7 +282,7 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>📊 선호 학과 조사1</h1>
+            <h1>📊 전공설문</h1>
             <p>QR코드로 접속하여 2개의 학과를 선택하세요!</p>
         </div>
         
@@ -310,10 +296,8 @@
                     <h3>관리자 설정</h3>
                     <button class="control-btn primary" onclick="startNewPoll()">새 투표 시작</button>
                     <button class="control-btn danger" onclick="resetVotes()">투표 초기화</button>
-                    <button class="control-btn primary" onclick="openClientWindow()">클라이언트 창 열기 (테스트용)</button>
                     <div style="margin-top: 10px; font-size: 0.8em; color: #666;">
-                        💡 초기화 버튼을 클릭하면 즉시 작동합니다!<br>
-                        🔧 테스트: "클라이언트 창 열기"로 동일 브라우저에서 확인 가능
+                        💡 초기화 버튼을 클릭하면 즉시 작동합니다!
                     </div>
                 </div>
             </div>
@@ -411,20 +395,11 @@
             document.getElementById('voteForm').classList.add('active');
         }
 
-        // QR코드 생성 (데이터 동기화를 위한 정보 포함)
+        // QR코드 생성
         function generateQR() {
             const baseUrl = window.location.origin + window.location.pathname;
             const timestamp = Date.now();
-            
-            // 현재 투표 데이터를 URL 파라미터로 인코딩
-            const voteDataEncoded = btoa(JSON.stringify({
-                voteData: voteData,
-                question: document.querySelector('.header h1').textContent.replace('📊 ', ''),
-                departments: departments,
-                timestamp: timestamp
-            }));
-            
-            const clientUrl = baseUrl + `?mode=client&data=${voteDataEncoded}`;
+            const clientUrl = baseUrl + `?mode=client&t=${timestamp}`;
             
             document.getElementById('urlDisplay').textContent = clientUrl;
             
@@ -439,7 +414,7 @@
                     backgroundAlpha: 1,
                     foreground: '#333333',
                     background: '#ffffff',
-                    level: 'L' // 데이터가 많아서 L로 변경
+                    level: 'M'
                 });
                 
                 qrContainer.appendChild(qr.canvas);
@@ -507,7 +482,7 @@
             }
         }
 
-        // 투표 제출시 QR코드 자동 갱신
+        // 투표 제출
         function submitVote() {
             if (selectedOptions.length !== 2) {
                 alert('정확히 2개를 선택해주세요!');
@@ -529,7 +504,6 @@
                         voteData[dept]--;
                     }
                 });
-                console.log('이전 투표 취소:', lastVote);
             }
 
             // 새로운 투표 실행
@@ -542,7 +516,7 @@
             lastVote = [...selectedDepts];
             localStorage.setItem(`lastVote_${deviceId}`, JSON.stringify(lastVote));
             
-            // 데이터 저장 및 동기화 (즉시 저장)
+            // 데이터 저장
             localStorage.setItem('voteData', JSON.stringify(voteData));
             localStorage.setItem('lastUpdate', Date.now().toString());
             
@@ -552,28 +526,15 @@
             // 투표 완료 후 실시간 결과 표시
             showVoteResult(selectedDepts);
             
-            // 실시간 알림
-            showRealTimeNotification(selectedDepts.join(', '));
-            
-            console.log(`투표 업데이트: ${selectedDepts.join(', ')}, 총 투표수: ${getTotalVotes()}`);
+            console.log(`투표 완료: ${selectedDepts.join(', ')}`);
         }
 
-        // 투표 데이터 저장 (단순화)
-        function saveVoteData() {
-            localStorage.setItem('voteData', JSON.stringify(voteData));
-            localStorage.setItem('lastUpdate', Date.now().toString());
-        }
-
-        // 투표 완료 후 실시간 결과 표시 (수정된 투표 메시지)
+        // 투표 완료 후 실시간 결과 표시
         function showVoteResult(selectedDepts) {
-            // 투표 폼 숨기기
             document.getElementById('voteForm').style.display = 'none';
-            
-            // 결과 화면 표시
             const resultDiv = document.getElementById('voteResult');
             resultDiv.style.display = 'block';
             
-            // 투표 완료 메시지 추가 (수정된 메시지)
             const completionMessage = document.createElement('div');
             completionMessage.innerHTML = `
                 <div style="text-align: center; padding: 20px; background: linear-gradient(45deg, #28a745, #20c997); border-radius: 15px; color: white; margin-bottom: 20px;">
@@ -587,25 +548,19 @@
                         padding: 10px 20px; 
                         cursor: pointer; 
                         font-weight: 600;
-                        transition: all 0.3s ease;
-                    " onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
+                    ">
                         🔄 투표 수정하기
                     </button>
-                    <p style="margin: 10px 0 0 0; font-size: 0.8em; opacity: 0.8;">
-                        💡 이전 투표는 자동으로 취소되고 새로운 투표로 교체됩니다
-                    </p>
                 </div>
             `;
             resultDiv.insertBefore(completionMessage, resultDiv.firstChild);
             
-            // 클라이언트용 차트 초기화 및 표시
             initClientChart();
             updateClientChart();
         }
 
-        // 투표 폼으로 돌아가기 (이전 투표 취소 안내)
+        // 투표 폼으로 돌아가기
         function resetVoteForm() {
-            // 결과 화면 숨기기
             document.getElementById('voteResult').style.display = 'none';
             document.getElementById('voteResult').innerHTML = `
                 <div style="background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);">
@@ -617,17 +572,13 @@
                 </div>
             `;
             
-            // 투표 폼 다시 표시
             document.getElementById('voteForm').style.display = 'block';
             
-            // 선택 상태 초기화
             selectedOptions = [];
             document.querySelectorAll('.option-item').forEach(item => {
                 item.classList.remove('selected');
             });
             updateSelectionDisplay();
-            
-            console.log('투표 폼이 초기화되었습니다. 이전 투표는 새로운 투표로 교체됩니다.');
         }
 
         // 클라이언트용 차트 초기화
@@ -644,21 +595,13 @@
                             'rgba(102, 126, 234, 0.8)',
                             'rgba(240, 147, 251, 0.8)',
                             'rgba(79, 172, 254, 0.8)',
-                            'rgba(67, 233, 123, 0.8)',
-                            'rgba(250, 112, 154, 0.8)',
-                            'rgba(168, 237, 234, 0.8)',
-                            'rgba(255, 154, 158, 0.8)',
-                            'rgba(255, 236, 210, 0.8)'
+                            'rgba(67, 233, 123, 0.8)'
                         ],
                         borderColor: [
                             'rgba(102, 126, 234, 1)',
                             'rgba(240, 147, 251, 1)',
                             'rgba(79, 172, 254, 1)',
-                            'rgba(67, 233, 123, 1)',
-                            'rgba(250, 112, 154, 1)',
-                            'rgba(168, 237, 234, 1)',
-                            'rgba(255, 154, 158, 1)',
-                            'rgba(255, 236, 210, 1)'
+                            'rgba(67, 233, 123, 1)'
                         ],
                         borderWidth: 2,
                         borderRadius: 8
@@ -678,10 +621,6 @@
                                 stepSize: 1
                             }
                         }
-                    },
-                    animation: {
-                        duration: 800,
-                        easing: 'easeInOutQuart'
                     }
                 }
             });
@@ -694,46 +633,8 @@
                 clientChart.data.datasets[0].data = Object.values(voteData);
                 clientChart.update();
                 
-                // 클라이언트 통계 업데이트
                 const total = getTotalVotes();
                 document.getElementById('clientTotalVotes').textContent = total;
-            }
-        }
-
-        // 실시간 알림
-        function showRealTimeNotification(option) {
-            if (isAdmin) {
-                const notification = document.createElement('div');
-                notification.style.cssText = `
-                    position: fixed; top: 20px; right: 20px; z-index: 1000;
-                    background: linear-gradient(45deg, #4facfe, #00f2fe);
-                    color: white; padding: 15px 20px; border-radius: 10px;
-                    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-                    animation: slideIn 0.5s ease-out;
-                `;
-                notification.innerHTML = `
-                    <strong>📱 새 투표!</strong><br>
-                    ${option}
-                `;
-                
-                if (!document.getElementById('notificationStyle')) {
-                    const style = document.createElement('style');
-                    style.id = 'notificationStyle';
-                    style.textContent = `
-                        @keyframes slideIn {
-                            from { transform: translateX(100%); opacity: 0; }
-                            to { transform: translateX(0); opacity: 1; }
-                        }
-                    `;
-                    document.head.appendChild(style);
-                }
-                
-                document.body.appendChild(notification);
-                
-                setTimeout(() => {
-                    notification.style.animation = 'slideIn 0.5s ease-out reverse';
-                    setTimeout(() => notification.remove(), 500);
-                }, 3000);
             }
         }
 
@@ -751,21 +652,13 @@
                             'rgba(102, 126, 234, 0.8)',
                             'rgba(240, 147, 251, 0.8)',
                             'rgba(79, 172, 254, 0.8)',
-                            'rgba(67, 233, 123, 0.8)',
-                            'rgba(250, 112, 154, 0.8)',
-                            'rgba(168, 237, 234, 0.8)',
-                            'rgba(255, 154, 158, 0.8)',
-                            'rgba(255, 236, 210, 0.8)'
+                            'rgba(67, 233, 123, 0.8)'
                         ],
                         borderColor: [
                             'rgba(102, 126, 234, 1)',
                             'rgba(240, 147, 251, 1)',
                             'rgba(79, 172, 254, 1)',
-                            'rgba(67, 233, 123, 1)',
-                            'rgba(250, 112, 154, 1)',
-                            'rgba(168, 237, 234, 1)',
-                            'rgba(255, 154, 158, 1)',
-                            'rgba(255, 236, 210, 1)'
+                            'rgba(67, 233, 123, 1)'
                         ],
                         borderWidth: 2,
                         borderRadius: 8
@@ -785,10 +678,6 @@
                                 stepSize: 1
                             }
                         }
-                    },
-                    animation: {
-                        duration: 800,
-                        easing: 'easeInOutQuart'
                     }
                 }
             });
@@ -796,56 +685,17 @@
 
         // 차트 업데이트
         function updateChart() {
-            chart.data.labels = Object.keys(voteData);
-            chart.data.datasets[0].data = Object.values(voteData);
-            
-            const colors = [
-                'rgba(102, 126, 234, 0.8)',
-                'rgba(240, 147, 251, 0.8)',
-                'rgba(79, 172, 254, 0.8)',
-                'rgba(67, 233, 123, 0.8)',
-                'rgba(250, 112, 154, 0.8)',
-                'rgba(168, 237, 234, 0.8)',
-                'rgba(255, 154, 158, 0.8)',
-                'rgba(255, 236, 210, 0.8)'
-            ];
-            
-            const borderColors = [
-                'rgba(102, 126, 234, 1)',
-                'rgba(240, 147, 251, 1)',
-                'rgba(79, 172, 254, 1)',
-                'rgba(67, 233, 123, 1)',
-                'rgba(250, 112, 154, 1)',
-                'rgba(168, 237, 234, 1)',
-                'rgba(255, 154, 158, 1)',
-                'rgba(255, 236, 210, 1)'
-            ];
-            
-            chart.data.datasets[0].backgroundColor = colors.slice(0, Object.keys(voteData).length);
-            chart.data.datasets[0].borderColor = borderColors.slice(0, Object.keys(voteData).length);
-            
-            chart.update();
+            if (chart) {
+                chart.data.labels = Object.keys(voteData);
+                chart.data.datasets[0].data = Object.values(voteData);
+                chart.update();
+            }
         }
 
         // 통계 업데이트
         function updateStats() {
             const total = getTotalVotes();
             document.getElementById('totalVotes').textContent = total;
-            
-            if (isAdmin) {
-                let statsHtml = `총 투표수: <span id="totalVotes">${total}</span>표`;
-                
-                if (total > 0) {
-                    statsHtml += '<br><div style="margin-top: 10px; font-size: 0.9em; color: #666;">';
-                    Object.entries(voteData).forEach(([option, count]) => {
-                        const percentage = ((count / total) * 100).toFixed(1);
-                        statsHtml += `<div>${option}: ${count}표 (${percentage}%)</div>`;
-                    });
-                    statsHtml += '</div>';
-                }
-                
-                document.querySelector('.stats').innerHTML = statsHtml;
-            }
         }
 
         // 총 투표수 계산
@@ -855,7 +705,7 @@
 
         // 새 투표 시작
         function startNewPoll() {
-            const newQuestion = prompt('새로운 투표 주제를 입력하세요:', '선호 학과 조사');
+            const newQuestion = prompt('새로운 투표 주제를 입력하세요:', '전공설문');
             if (newQuestion) {
                 const optionsText = prompt(
                     '선택지를 입력하세요 (쉼표로 구분):\n예: 컴퓨터공학과,경영학과,기계공학과,없음',
@@ -878,21 +728,14 @@
                         updateChart();
                         updateStats();
                         
-                        // 클라이언트 차트도 업데이트
-                        if (clientChart) {
-                            updateClientChart();
-                        }
-                        
                         localStorage.setItem('voteData', JSON.stringify(voteData));
                         localStorage.setItem('pollQuestion', newQuestion);
                         localStorage.setItem('pollOptions', JSON.stringify(options));
                         
-                        console.log('새 투표가 시작되었습니다:', newQuestion, options);
+                        console.log('새 투표가 시작되었습니다:', newQuestion);
                     } else {
                         alert('최소 2개의 선택지를 입력해주세요!');
                     }
-                } else {
-                    alert('선택지를 입력해주세요!');
                 }
             }
         }
@@ -911,167 +754,38 @@
                     optionsList.appendChild(div);
                 });
                 
-                // 선택 상태 초기화
                 selectedOptions = [];
                 updateSelectionDisplay();
             }
         }
 
-        // 클라이언트 창 열기 (테스트용)
-        function openClientWindow() {
-            const baseUrl = window.location.origin + window.location.pathname;
-            const clientUrl = baseUrl + '?mode=client';
-            window.open(clientUrl, '_blank', 'width=500,height=800');
-        }
-
-        // 투표 초기화 (QR코드 갱신 포함)
+        // 투표 초기화
         function resetVotes() {
-            if (confirm('정말로 모든 투표 데이터를 초기화하시겠습니까?\n이 작업은 되돌릴 수 없습니다.')) {
-                // 모든 투표 데이터를 0으로 초기화
+            if (confirm('정말로 모든 투표 데이터를 초기화하시겠습니까?')) {
                 Object.keys(voteData).forEach(key => {
                     voteData[key] = 0;
                 });
                 
-                // localStorage에서 관련 데이터 제거
-                localStorage.removeItem('votedDevices');
                 localStorage.setItem('voteData', JSON.stringify(voteData));
                 localStorage.setItem('lastUpdate', Date.now().toString());
                 
-                // 모든 기기의 투표 기록 제거
                 Object.keys(localStorage).forEach(key => {
                     if (key.startsWith('lastVote_')) {
                         localStorage.removeItem(key);
                     }
                 });
                 
-                // 현재 기기의 투표 기록도 초기화
                 lastVote = null;
-                
-                // 초기화 타임스탬프 저장
-                const resetTimestamp = Date.now();
-                localStorage.setItem('resetSignal', resetTimestamp.toString());
-                localStorage.setItem('globalResetTime', resetTimestamp.toString());
-                
-                // QR코드 다시 생성 (새로운 타임스탬프로)
                 generateQR();
-                
-                // UI 업데이트
                 updateChart();
                 updateStats();
                 
-                // 클라이언트 차트도 업데이트
-                if (clientChart) {
-                    updateClientChart();
-                }
-                
-                console.log('투표가 완전히 초기화되었습니다.');
-                alert('투표가 초기화되었습니다!\n\n📱 새로운 QR코드가 생성되었습니다.\n스마트폰 사용자들은 새 QR코드로 접속해주세요.');
+                console.log('투표가 초기화되었습니다.');
+                alert('투표가 초기화되었습니다!');
             }
         }
 
-        // 페이지 로드시 초기화
-        window.onload = function() {
-            // URL 파라미터에서 데이터 추출
-            const urlParams = new URLSearchParams(window.location.search);
-            const encodedData = urlParams.get('data');
-            const forceReset = urlParams.get('reset');
-            
-            // QR코드로 접속한 경우 서버 데이터 로드
-            if (encodedData && !isAdmin) {
-                try {
-                    const serverData = JSON.parse(atob(encodedData));
-                    
-                    // 서버에서 받은 최신 데이터로 업데이트
-                    voteData = serverData.voteData || voteData;
-                    departments = serverData.departments || departments;
-                    
-                    // 제목 업데이트
-                    if (serverData.question) {
-                        document.querySelector('.header h1').textContent = '📊 ' + serverData.question;
-                    }
-                    
-                    // localStorage에 최신 데이터 저장
-                    localStorage.setItem('voteData', JSON.stringify(voteData));
-                    localStorage.setItem('pollQuestion', serverData.question || '선호 학과 조사1');
-                    localStorage.setItem('pollOptions', JSON.stringify(departments));
-                    
-                    console.log('🔄 서버에서 최신 데이터를 가져왔습니다:', voteData);
-                    
-                    // 성공 메시지 표시
-                    setTimeout(() => {
-                        const notification = document.createElement('div');
-                        notification.style.cssText = `
-                            position: fixed; top: 20px; left: 20px; right: 20px; z-index: 1000;
-                            background: linear-gradient(45deg, #28a745, #20c997);
-                            color: white; padding: 15px; border-radius: 10px;
-                            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-                            text-align: center; font-weight: 600;
-                        `;
-                        notification.innerHTML = `
-                            ✅ 최신 투표 데이터를 가져왔습니다!<br>
-                            <small style="opacity: 0.8;">총 투표수: ${getTotalVotes()}표</small>
-                        `;
-                        document.body.appendChild(notification);
-                        
-                        setTimeout(() => notification.remove(), 3000);
-                    }, 500);
-                    
-                } catch (error) {
-                    console.error('데이터 파싱 오류:', error);
-                    // 에러 시 기본 데이터 사용
-                    loadDefaultData();
-                }
-            } else {
-                // 일반 접속이거나 관리자인 경우
-                loadDefaultData();
-            }
-            
-            // 강제 초기화 처리
-            if (forceReset === 'true') {
-                const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname + (mode === 'client' ? '?mode=client' : '');
-                window.history.replaceState({}, document.title, newUrl);
-                
-                voteData = {
-                    '컴퓨터공학과': 0,
-                    '경영학과': 0,
-                    '기계공학과': 0,
-                    '없음': 0
-                };
-                localStorage.setItem('voteData', JSON.stringify(voteData));
-                lastVote = null;
-                selectedOptions = [];
-                
-                console.log('🔄 강제 초기화가 실행되었습니다.');
-            }
-            
-            // UI 초기화
-            if (!isAdmin) {
-                updateOptionsDisplay(departments);
-                updateSelectionDisplay();
-                
-                if (forceReset === 'true') {
-                    setTimeout(() => {
-                        alert('📊 투표가 초기화되었습니다!\n새로운 투표를 시작하세요.');
-                    }, 500);
-                }
-            } else {
-                generateQR();
-            }
-            
-            initChart();
-            updateStats();
-            
-            // 기기의 마지막 투표 기록 복원
-            const savedLastVote = localStorage.getItem(`lastVote_${deviceId}`);
-            if (savedLastVote) {
-                lastVote = JSON.parse(savedLastVote);
-            }
-            
-            // 실시간 동기화 시작
-            startRealTimeSync();
-        };
-
-        // 기본 데이터 로드 함수
+        // 기본 데이터 로드
         function loadDefaultData() {
             const savedData = localStorage.getItem('voteData');
             const savedQuestion = localStorage.getItem('pollQuestion');
@@ -1090,101 +804,66 @@
             }
         }
 
-        // 실시간 동기화 함수 분리
-        function startRealTimeSync() {
-        // 실시간 동기화 함수 분리
-        function startRealTimeSync() {
+        // 페이지 로드시 초기화
+        window.onload = function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const timestamp = urlParams.get('t');
+            
+            loadDefaultData();
+            
+            if (timestamp && !isAdmin) {
+                setTimeout(() => {
+                    const notification = document.createElement('div');
+                    notification.style.cssText = `
+                        position: fixed; top: 20px; left: 20px; right: 20px; z-index: 1000;
+                        background: linear-gradient(45deg, #007bff, #0056b3);
+                        color: white; padding: 15px; border-radius: 10px;
+                        box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+                        text-align: center; font-weight: 600;
+                    `;
+                    notification.innerHTML = `
+                        📱 QR코드로 접속하셨습니다!<br>
+                        <small style="opacity: 0.8;">현재 총 투표수: ${getTotalVotes()}표</small>
+                    `;
+                    document.body.appendChild(notification);
+                    
+                    setTimeout(() => notification.remove(), 3000);
+                }, 500);
+                
+                const cleanUrl = window.location.protocol + "//" + window.location.host + window.location.pathname + '?mode=client';
+                window.history.replaceState({}, document.title, cleanUrl);
+            }
+            
+            if (!isAdmin) {
+                updateOptionsDisplay(departments);
+                updateSelectionDisplay();
+            } else {
+                generateQR();
+            }
+            
+            initChart();
+            updateStats();
+            
+            const savedLastVote = localStorage.getItem(`lastVote_${deviceId}`);
+            if (savedLastVote) {
+                lastVote = JSON.parse(savedLastVote);
+            }
+            
+            // 실시간 동기화
             setInterval(() => {
                 const currentData = localStorage.getItem('voteData');
-                const currentQuestion = localStorage.getItem('pollQuestion');
-                const currentOptions = localStorage.getItem('pollOptions');
-                const resetSignal = localStorage.getItem('resetSignal');
-                
-                // 초기화 신호 감지
-                if (resetSignal && resetSignal !== localStorage.getItem('lastResetSignal')) {
-                    localStorage.setItem('lastResetSignal', resetSignal);
-                    console.log('🔄 다른 기기에서 초기화가 실행되었습니다.');
-                    
-                    // 클라이언트에서 상태 초기화
-                    if (!isAdmin) {
-                        selectedOptions = [];
-                        document.querySelectorAll('.option-item').forEach(item => {
-                            item.classList.remove('selected');
-                        });
-                        updateSelectionDisplay();
-                        
-                        // 결과 화면이 표시 중이라면 투표 폼으로 돌아가기
-                        if (document.getElementById('voteResult').style.display !== 'none') {
-                            resetVoteForm();
-                        }
-                        
-                        // 현재 기기의 투표 기록도 초기화
-                        lastVote = null;
-                        localStorage.removeItem(`lastVote_${deviceId}`);
-                    }
-                }
-                
                 if (currentData) {
                     const newData = JSON.parse(currentData);
                     const dataChanged = JSON.stringify(newData) !== JSON.stringify(voteData);
                     
                     if (dataChanged) {
-                        const oldTotal = getTotalVotes();
                         voteData = newData;
-                        const newTotal = Object.values(voteData).reduce((sum, count) => sum + count, 0);
-                        
                         updateChart();
                         updateStats();
                         
-                        // 클라이언트 차트도 업데이트
                         if (clientChart && !isAdmin) {
                             updateClientChart();
                         }
-                        
-                        if (isAdmin && newTotal > oldTotal) {
-                            console.log(`🔔 실시간 업데이트: 새 투표가 ${newTotal - oldTotal}개 들어왔습니다!`);
-                            // QR코드 자동 갱신 (새 투표가 들어왔을 때)
-                            generateQR();
-                        }
-                        
-                        // 초기화 감지 (총 투표수가 0이 된 경우)
-                        if (newTotal === 0 && oldTotal > 0) {
-                            console.log('🔄 투표가 초기화되었습니다.');
-                            
-                            // 클라이언트에서 투표 폼이 표시 중이라면 선택 상태 초기화
-                            if (!isAdmin && document.getElementById('voteForm').style.display !== 'none') {
-                                selectedOptions = [];
-                                document.querySelectorAll('.option-item').forEach(item => {
-                                    item.classList.remove('selected');
-                                });
-                                updateSelectionDisplay();
-                                
-                                // 결과 화면이 표시 중이라면 투표 폼으로 돌아가기
-                                if (document.getElementById('voteResult').style.display !== 'none') {
-                                    resetVoteForm();
-                                }
-                            }
-                            
-                            // 현재 기기의 투표 기록도 초기화
-                            lastVote = null;
-                            localStorage.removeItem(`lastVote_${deviceId}`);
-                        }
-                    }
-                }
-                
-                if (currentQuestion) {
-                    const newQuestion = currentQuestion;
-                    const currentTitle = document.querySelector('.header h1').textContent;
-                    if (currentTitle !== '📊 ' + newQuestion) {
-                        document.querySelector('.header h1').textContent = '📊 ' + newQuestion;
-                    }
-                }
-                
-                if (currentOptions && !isAdmin) {
-                    const options = JSON.parse(currentOptions);
-                    if (departments.length !== options.length || !departments.every((dept, i) => dept === options[i])) {
-                        departments = [...options];
-                        updateOptionsDisplay(options);
                     }
                 }
             }, 500);
