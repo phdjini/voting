@@ -380,8 +380,6 @@
         let chart;
         let clientChart; // 클라이언트용 차트
         let isAdmin = true;
-        let hasVoted = false;
-        let deviceId = localStorage.getItem('deviceId') || generateDeviceId();
         let selectedOptions = []; // 선택된 옵션들
         
         // 학과 옵션 배열
@@ -398,12 +396,8 @@
             document.getElementById('voteForm').classList.add('active');
         }
 
-        // 기기별 고유 ID 생성
-        function generateDeviceId() {
-            const id = 'device_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
-            localStorage.setItem('deviceId', id);
-            return id;
-        }
+        // 기기별 고유 ID 생성 (사용하지 않음 - 중복 투표 허용을 위해 제거)
+        // function generateDeviceId() - 더이상 사용하지 않음
 
         // QR코드 생성
         function generateQR() {
