@@ -309,7 +309,7 @@
                 <div class="admin-controls">
                     <h3>관리자 설정</h3>
                     <button class="control-btn primary" onclick="startNewPoll()">새 투표 시작</button>
-                    <button class="control-btn danger" onclick="performReset()">투표 초기화</button>
+                    <button class="control-btn danger" onclick="resetVotes()">투표 초기화</button>
                     <div style="margin-top: 10px; font-size: 0.8em; color: #666;">
                         💡 초기화 버튼을 클릭하면 즉시 작동합니다!!!!
                     </div>
@@ -408,9 +408,6 @@
             document.querySelector('.content').style.gridTemplateColumns = '1fr';
             document.getElementById('voteForm').classList.add('active');
         }
-
-        // 기기별 고유 ID 생성 (사용하지 않음 - 중복 투표 허용을 위해 제거)
-        // function generateDeviceId() - 더이상 사용하지 않음
 
         // QR코드 생성
         function generateQR() {
@@ -908,20 +905,41 @@
             }
         }
 
-        // 투표 초기화
+        // 투표 초기화 (수정된 함수)
         function resetVotes() {
-            Object.keys(voteData).forEach(key => {
-                voteData[key] = 0;
-            });
-            
-            localStorage.removeItem('votedDevices');
-            localStorage.setItem('lastUpdate', Date.now().toString());
-            
-            saveVoteData();
-            updateChart();
-            updateStats();
-            
-            console.log('투표가 초기화되었습니다.');
+            if (confirm('정말로 모든 투표 데이터를 초기화하시겠습니까?\n이 작업은 되돌릴 수 없습니다.')) {
+                // 모든 투표 데이터를 0으로 초기화
+                Object.keys(voteData).forEach(key => {
+                    voteData[key] = 0;
+                });
+                
+                // localStorage에서 관련 데이터 제거
+                localStorage.removeItem('votedDevices');
+                localStorage.setItem('voteData', JSON.stringify(voteData));
+                localStorage.setItem('lastUpdate', Date.now().toString());
+                
+                // 모든 기기의 투표 기록 제거
+                Object.keys(localStorage).forEach(key => {
+                    if (key.startsWith('lastVote_')) {
+                        localStorage.removeItem(key);
+                    }
+                });
+                
+                // 현재 기기의 투표 기록도 초기화
+                lastVote = null;
+                
+                // UI 업데이트
+                updateChart();
+                updateStats();
+                
+                // 클라이언트 차트도 업데이트
+                if (clientChart) {
+                    updateClientChart();
+                }
+                
+                console.log('투표가 완전히 초기화되었습니다.');
+                alert('투표가 초기화되었습니다!');
+            }
         }
 
         // 페이지 로드시 초기화
@@ -943,6 +961,12 @@
                 if (!isAdmin) {
                     updateOptionsDisplay(departments);
                 }
+            }
+            
+            // 기기의 마지막 투표 기록 복원
+            const savedLastVote = localStorage.getItem(`lastVote_${deviceId}`);
+            if (savedLastVote) {
+                lastVote = JSON.parse(savedLastVote);
             }
             
             if (isAdmin) {
