@@ -409,10 +409,11 @@
             document.getElementById('voteForm').classList.add('active');
         }
 
-        // QR코드 생성
+        // QR코드 생성 (타임스탬프 포함)
         function generateQR() {
             const baseUrl = window.location.origin + window.location.pathname;
-            const clientUrl = baseUrl + '?mode=client';
+            const timestamp = Date.now();
+            const clientUrl = baseUrl + `?mode=client&t=${timestamp}`;
             
             document.getElementById('urlDisplay').textContent = clientUrl;
             
@@ -905,7 +906,7 @@
             }
         }
 
-        // 투표 초기화 (수정된 함수)
+        // 투표 초기화 (QR코드 갱신 포함)
         function resetVotes() {
             if (confirm('정말로 모든 투표 데이터를 초기화하시겠습니까?\n이 작업은 되돌릴 수 없습니다.')) {
                 // 모든 투표 데이터를 0으로 초기화
@@ -928,6 +929,14 @@
                 // 현재 기기의 투표 기록도 초기화
                 lastVote = null;
                 
+                // 초기화 타임스탬프 저장
+                const resetTimestamp = Date.now();
+                localStorage.setItem('resetSignal', resetTimestamp.toString());
+                localStorage.setItem('globalResetTime', resetTimestamp.toString());
+                
+                // QR코드 다시 생성 (새로운 타임스탬프로)
+                generateQR();
+                
                 // UI 업데이트
                 updateChart();
                 updateStats();
@@ -937,16 +946,36 @@
                     updateClientChart();
                 }
                 
-                // 초기화 신호를 localStorage에 저장 (다른 기기들이 감지할 수 있도록)
-                localStorage.setItem('resetSignal', Date.now().toString());
-                
                 console.log('투표가 완전히 초기화되었습니다.');
-                alert('투표가 초기화되었습니다!');
+                alert('투표가 초기화되었습니다!\n\n📱 새로운 QR코드가 생성되었습니다.\n스마트폰 사용자들은 새 QR코드로 접속해주세요.');
             }
         }
 
         // 페이지 로드시 초기화
         window.onload = function() {
+            // 먼저 초기화 상태 확인 (새로고침 감지)
+            const urlParams = new URLSearchParams(window.location.search);
+            const forceReset = urlParams.get('reset');
+            
+            if (forceReset === 'true') {
+                // URL에서 reset 파라미터 제거 (깔끔하게)
+                const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname + (mode === 'client' ? '?mode=client' : '');
+                window.history.replaceState({}, document.title, newUrl);
+                
+                // 강제 초기화
+                voteData = {
+                    '컴퓨터공학과': 0,
+                    '경영학과': 0,
+                    '기계공학과': 0,
+                    '없음': 0
+                };
+                localStorage.setItem('voteData', JSON.stringify(voteData));
+                lastVote = null;
+                selectedOptions = [];
+                
+                console.log('🔄 강제 초기화가 실행되었습니다.');
+            }
+            
             const savedData = localStorage.getItem('voteData');
             const savedQuestion = localStorage.getItem('pollQuestion');
             const savedOptions = localStorage.getItem('pollOptions');
@@ -977,6 +1006,13 @@
             } else {
                 // 클라이언트 모드에서 초기 UI 설정
                 updateSelectionDisplay();
+                
+                // 클라이언트에서 초기화 알림 표시
+                if (forceReset === 'true') {
+                    setTimeout(() => {
+                        alert('📊 투표가 초기화되었습니다!\n새로운 투표를 시작하세요.');
+                    }, 500);
+                }
             }
             
             initChart();
