@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QR코드 실시간 투표 시스템 - 2개 선택(단일전공시 1개+없음)</title>
+    <title>QR코드 실시간 투표 시스템 - 2개 선택</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
     <style>
@@ -495,12 +495,20 @@
             }
         }
 
-        // 투표 제출 함수 (기기별 투표 기록 관리)
+        // 투표 제출 함수 (개별 기기 투표 교체 방식)
         function submitVote() {
             if (selectedOptions.length !== 2) {
                 alert('정확히 2개를 선택해주세요!');
                 return;
             }
+
+            // 전체 투표 데이터 로드
+            const currentVoteData = JSON.parse(localStorage.getItem('voteData') || '{}');
+            Object.keys(voteData).forEach(key => {
+                if (currentVoteData[key] !== undefined) {
+                    voteData[key] = currentVoteData[key];
+                }
+            });
 
             // 이전 투표가 있다면 먼저 취소
             if (lastVote) {
@@ -522,8 +530,10 @@
             lastVote = [...selectedDepts];
             localStorage.setItem(`lastVote_${deviceId}`, JSON.stringify(lastVote));
             
-            // 데이터 저장 및 동기화
-            saveVoteData();
+            // 데이터 저장 및 동기화 (즉시 저장)
+            localStorage.setItem('voteData', JSON.stringify(voteData));
+            localStorage.setItem('lastUpdate', Date.now().toString());
+            
             updateChart();
             updateStats();
             
@@ -533,10 +543,10 @@
             // 실시간 알림
             showRealTimeNotification(selectedDepts.join(', '));
             
-            console.log(`새 투표: ${selectedDepts.join(', ')}, 총 투표수: ${getTotalVotes()}`);
+            console.log(`투표 업데이트: ${selectedDepts.join(', ')}, 총 투표수: ${getTotalVotes()}`);
         }
 
-        // 투표 데이터 저장
+        // 투표 데이터 저장 (단순화)
         function saveVoteData() {
             localStorage.setItem('voteData', JSON.stringify(voteData));
             localStorage.setItem('lastUpdate', Date.now().toString());
