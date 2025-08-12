@@ -937,6 +937,9 @@
                     updateClientChart();
                 }
                 
+                // 초기화 신호를 localStorage에 저장 (다른 기기들이 감지할 수 있도록)
+                localStorage.setItem('resetSignal', Date.now().toString());
+                
                 console.log('투표가 완전히 초기화되었습니다.');
                 alert('투표가 초기화되었습니다!');
             }
@@ -984,6 +987,31 @@
                 const currentData = localStorage.getItem('voteData');
                 const currentQuestion = localStorage.getItem('pollQuestion');
                 const currentOptions = localStorage.getItem('pollOptions');
+                const resetSignal = localStorage.getItem('resetSignal');
+                
+                // 초기화 신호 감지
+                if (resetSignal && resetSignal !== localStorage.getItem('lastResetSignal')) {
+                    localStorage.setItem('lastResetSignal', resetSignal);
+                    console.log('🔄 다른 기기에서 초기화가 실행되었습니다.');
+                    
+                    // 클라이언트에서 상태 초기화
+                    if (!isAdmin) {
+                        selectedOptions = [];
+                        document.querySelectorAll('.option-item').forEach(item => {
+                            item.classList.remove('selected');
+                        });
+                        updateSelectionDisplay();
+                        
+                        // 결과 화면이 표시 중이라면 투표 폼으로 돌아가기
+                        if (document.getElementById('voteResult').style.display !== 'none') {
+                            resetVoteForm();
+                        }
+                        
+                        // 현재 기기의 투표 기록도 초기화
+                        lastVote = null;
+                        localStorage.removeItem(`lastVote_${deviceId}`);
+                    }
+                }
                 
                 if (currentData) {
                     const newData = JSON.parse(currentData);
@@ -997,8 +1025,36 @@
                         updateChart();
                         updateStats();
                         
+                        // 클라이언트 차트도 업데이트
+                        if (clientChart && !isAdmin) {
+                            updateClientChart();
+                        }
+                        
                         if (isAdmin && newTotal > oldTotal) {
                             console.log(`🔔 실시간 업데이트: 새 투표가 ${newTotal - oldTotal}개 들어왔습니다!`);
+                        }
+                        
+                        // 초기화 감지 (총 투표수가 0이 된 경우)
+                        if (newTotal === 0 && oldTotal > 0) {
+                            console.log('🔄 투표가 초기화되었습니다.');
+                            
+                            // 클라이언트에서 투표 폼이 표시 중이라면 선택 상태 초기화
+                            if (!isAdmin && document.getElementById('voteForm').style.display !== 'none') {
+                                selectedOptions = [];
+                                document.querySelectorAll('.option-item').forEach(item => {
+                                    item.classList.remove('selected');
+                                });
+                                updateSelectionDisplay();
+                                
+                                // 결과 화면이 표시 중이라면 투표 폼으로 돌아가기
+                                if (document.getElementById('voteResult').style.display !== 'none') {
+                                    resetVoteForm();
+                                }
+                            }
+                            
+                            // 현재 기기의 투표 기록도 초기화
+                            lastVote = null;
+                            localStorage.removeItem(`lastVote_${deviceId}`);
                         }
                     }
                 }
