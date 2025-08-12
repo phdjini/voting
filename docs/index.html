@@ -231,6 +231,13 @@
                 <canvas id="voteChart" width="400" height="300"></canvas>
                 <div class="stats">
                     <p>총 투표수: <span id="totalVotes">0</span>표</p>
+                    <div style="margin-top: 15px; padding: 15px; background: #f8f9fa; border-radius: 8px; font-size: 0.9em;">
+                        <strong>📊 실시간 모니터링</strong>
+                        <div style="margin-top: 8px; color: #666;">
+                            다른 휴대폰에서 투표하면<br>
+                            즉시 그래프가 업데이트됩니다!
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -248,16 +255,25 @@
     </div>
 
     <script>
-        // 투표 데이터 저장
+        // 투표 데이터 저장 (고유 ID로 중복 투표 방지)
         let voteData = {
-            '옵션 A': 0,
-            '옵션 B': 0,
-            '옵션 C': 0,
-            '옵션 D': 0
+            '컴퓨터공학과': 0,
+            '전자공학과': 0,
+            '기계공학과': 0,
+            '화학공학과': 0
         };
 
         let chart;
         let isAdmin = true; // 기본적으로 관리자 모드
+        let hasVoted = false; // 중복 투표 방지
+        let deviceId = localStorage.getItem('deviceId') || generateDeviceId(); // 기기별 고유 ID
+
+        // 기기별 고유 ID 생성
+        function generateDeviceId() {
+            const id = 'device_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
+            localStorage.setItem('deviceId', id);
+            return id;
+        }
 
         // URL 파라미터 확인하여 클라이언트 모드 설정
         const urlParams = new URLSearchParams(window.location.search);
@@ -319,16 +335,24 @@
                         label: '투표수',
                         data: Object.values(voteData),
                         backgroundColor: [
-                            'rgba(255, 99, 132, 0.8)',
-                            'rgba(54, 162, 235, 0.8)',
-                            'rgba(255, 205, 86, 0.8)',
-                            'rgba(75, 192, 192, 0.8)'
+                            'rgba(102, 126, 234, 0.8)',
+                            'rgba(240, 147, 251, 0.8)',
+                            'rgba(79, 172, 254, 0.8)',
+                            'rgba(67, 233, 123, 0.8)',
+                            'rgba(250, 112, 154, 0.8)',
+                            'rgba(168, 237, 234, 0.8)',
+                            'rgba(255, 154, 158, 0.8)',
+                            'rgba(255, 236, 210, 0.8)'
                         ],
                         borderColor: [
-                            'rgba(255, 99, 132, 1)',
-                            'rgba(54, 162, 235, 1)',
-                            'rgba(255, 205, 86, 1)',
-                            'rgba(75, 192, 192, 1)'
+                            'rgba(102, 126, 234, 1)',
+                            'rgba(240, 147, 251, 1)',
+                            'rgba(79, 172, 254, 1)',
+                            'rgba(67, 233, 123, 1)',
+                            'rgba(250, 112, 154, 1)',
+                            'rgba(168, 237, 234, 1)',
+                            'rgba(255, 154, 158, 1)',
+                            'rgba(255, 236, 210, 1)'
                         ],
                         borderWidth: 2,
                         borderRadius: 8
@@ -357,7 +381,31 @@
             });
         }
 
-        // 투표 함수
+        // 투표 폼 업데이트
+        function updateVoteForm(options) {
+            const voteOptionsContainer = document.querySelector('.vote-options');
+            const colors = [
+                'linear-gradient(45deg, #667eea, #764ba2)',
+                'linear-gradient(45deg, #f093fb, #f5576c)',
+                'linear-gradient(45deg, #4facfe, #00f2fe)',
+                'linear-gradient(45deg, #43e97b, #38f9d7)',
+                'linear-gradient(45deg, #fa709a, #fee140)',
+                'linear-gradient(45deg, #a8edea, #fed6e3)',
+                'linear-gradient(45deg, #ff9a9e, #fecfef)',
+                'linear-gradient(45deg, #ffecd2, #fcb69f)'
+            ];
+            
+            voteOptionsContainer.innerHTML = '';
+            
+            options.forEach((option, index) => {
+                const button = document.createElement('button');
+                button.className = 'vote-btn';
+                button.textContent = `${index + 1}. ${option}`;
+                button.style.background = colors[index % colors.length];
+                button.onclick = () => vote(option);
+                voteOptionsContainer.appendChild(button);
+            });
+        }
         function vote(option) {
             voteData[option]++;
             updateChart();
@@ -384,41 +432,142 @@
 
         // 차트 업데이트
         function updateChart() {
+            chart.data.labels = Object.keys(voteData);
             chart.data.datasets[0].data = Object.values(voteData);
+            
+            // 색상도 동적으로 업데이트
+            const colors = [
+                'rgba(102, 126, 234, 0.8)',
+                'rgba(240, 147, 251, 0.8)',
+                'rgba(79, 172, 254, 0.8)',
+                'rgba(67, 233, 123, 0.8)',
+                'rgba(250, 112, 154, 0.8)',
+                'rgba(168, 237, 234, 0.8)',
+                'rgba(255, 154, 158, 0.8)',
+                'rgba(255, 236, 210, 0.8)'
+            ];
+            
+            const borderColors = [
+                'rgba(102, 126, 234, 1)',
+                'rgba(240, 147, 251, 1)',
+                'rgba(79, 172, 254, 1)',
+                'rgba(67, 233, 123, 1)',
+                'rgba(250, 112, 154, 1)',
+                'rgba(168, 237, 234, 1)',
+                'rgba(255, 154, 158, 1)',
+                'rgba(255, 236, 210, 1)'
+            ];
+            
+            chart.data.datasets[0].backgroundColor = colors.slice(0, Object.keys(voteData).length);
+            chart.data.datasets[0].borderColor = borderColors.slice(0, Object.keys(voteData).length);
+            
             chart.update();
         }
 
-        // 통계 업데이트
+        // 통계 업데이트 (더 상세한 정보)
         function updateStats() {
-            const total = Object.values(voteData).reduce((sum, count) => sum + count, 0);
+            const total = getTotalVotes();
             document.getElementById('totalVotes').textContent = total;
+            
+            // 관리자 화면에 상세 통계 표시
+            if (isAdmin) {
+                let statsHtml = `총 투표수: <span id="totalVotes">${total}</span>표`;
+                
+                if (total > 0) {
+                    statsHtml += '<br><div style="margin-top: 10px; font-size: 0.9em; color: #666;">';
+                    Object.entries(voteData).forEach(([option, count]) => {
+                        const percentage = ((count / total) * 100).toFixed(1);
+                        statsHtml += `<div>${option}: ${count}표 (${percentage}%)</div>`;
+                    });
+                    statsHtml += '</div>';
+                }
+                
+                document.querySelector('.stats').innerHTML = statsHtml;
+            }
+        }
+
+        // 총 투표수 계산
+        function getTotalVotes() {
+            return Object.values(voteData).reduce((sum, count) => sum + count, 0);
         }
 
         // 새 투표 시작
         function startNewPoll() {
             const newQuestion = prompt('새로운 투표 주제를 입력하세요:', '오늘 점심 메뉴는?');
             if (newQuestion) {
-                document.querySelector('.header h1').textContent = '📊 ' + newQuestion;
-                resetVotes();
+                // 선택지 입력받기
+                const optionsText = prompt(
+                    '선택지를 입력하세요 (쉼표로 구분):\n예: 컴퓨터공학과,전자공학과,기계공학과,화학공학과',
+                    '컴퓨터공학과,전자공학과,기계공학과,화학공학과'
+                );
+                
+                if (optionsText) {
+                    // 선택지 배열로 변환
+                    const options = optionsText.split(',').map(opt => opt.trim()).filter(opt => opt.length > 0);
+                    
+                    if (options.length >= 2) {
+                        // 새로운 투표 데이터 설정
+                        voteData = {};
+                        options.forEach(option => {
+                            voteData[option] = 0;
+                        });
+                        
+                        // UI 업데이트
+                        document.querySelector('.header h1').textContent = '📊 ' + newQuestion;
+                        updateVoteForm(options);
+                        updateChart();
+                        updateStats();
+                        
+                        // 로컬 스토리지에 저장
+                        localStorage.setItem('voteData', JSON.stringify(voteData));
+                        localStorage.setItem('pollQuestion', newQuestion);
+                        localStorage.setItem('pollOptions', JSON.stringify(options));
+                        
+                        console.log('새 투표가 시작되었습니다:', newQuestion, options);
+                    } else {
+                        alert('최소 2개의 선택지를 입력해주세요!');
+                    }
+                } else {
+                    alert('선택지를 입력해주세요!');
+                }
             }
         }
 
-        // 투표 초기화
+        // 투표 초기화 (투표 기록도 함께 초기화)
         function resetVotes() {
             Object.keys(voteData).forEach(key => {
                 voteData[key] = 0;
             });
+            
+            // 투표 기록 초기화
+            localStorage.removeItem('votedDevices');
+            localStorage.setItem('lastUpdate', Date.now().toString());
+            
+            saveVoteData();
             updateChart();
             updateStats();
-            localStorage.setItem('voteData', JSON.stringify(voteData));
+            
+            console.log('투표가 초기화되었습니다.');
         }
 
         // 페이지 로드시 초기화
         window.onload = function() {
             // 저장된 투표 데이터 불러오기
             const savedData = localStorage.getItem('voteData');
+            const savedQuestion = localStorage.getItem('pollQuestion');
+            const savedOptions = localStorage.getItem('pollOptions');
+            
             if (savedData) {
                 voteData = JSON.parse(savedData);
+            }
+            
+            if (savedQuestion) {
+                document.querySelector('.header h1').textContent = '📊 ' + savedQuestion;
+            }
+            
+            if (savedOptions && !isAdmin) {
+                const options = JSON.parse(savedOptions);
+                updateVoteForm(options);
             }
             
             if (isAdmin) {
@@ -427,18 +576,49 @@
             initChart();
             updateStats();
             
-            // 주기적으로 데이터 동기화 (다른 탭에서 투표한 경우)
+            // 주기적으로 데이터 동기화 (실시간 업데이트 강화)
             setInterval(() => {
                 const currentData = localStorage.getItem('voteData');
+                const currentQuestion = localStorage.getItem('pollQuestion');
+                const currentOptions = localStorage.getItem('pollOptions');
+                const lastUpdate = localStorage.getItem('lastUpdate');
+                
                 if (currentData) {
                     const newData = JSON.parse(currentData);
-                    if (JSON.stringify(newData) !== JSON.stringify(voteData)) {
+                    const dataChanged = JSON.stringify(newData) !== JSON.stringify(voteData);
+                    
+                    if (dataChanged) {
+                        // 새로운 투표가 들어온 경우
+                        const oldTotal = getTotalVotes();
                         voteData = newData;
+                        const newTotal = Object.values(voteData).reduce((sum, count) => sum + count, 0);
+                        
                         updateChart();
                         updateStats();
+                        
+                        // 관리자에게 실시간 알림
+                        if (isAdmin && newTotal > oldTotal) {
+                            console.log(`🔔 실시간 업데이트: 새 투표가 ${newTotal - oldTotal}개 들어왔습니다!`);
+                        }
                     }
                 }
-            }, 1000);
+                
+                if (currentQuestion) {
+                    const newQuestion = currentQuestion;
+                    const currentTitle = document.querySelector('.header h1').textContent;
+                    if (currentTitle !== '📊 ' + newQuestion) {
+                        document.querySelector('.header h1').textContent = '📊 ' + newQuestion;
+                    }
+                }
+                
+                if (currentOptions && !isAdmin) {
+                    const options = JSON.parse(currentOptions);
+                    const currentButtons = document.querySelectorAll('.vote-btn');
+                    if (currentButtons.length !== options.length) {
+                        updateVoteForm(options);
+                    }
+                }
+            }, 500); // 0.5초마다 체크 (더 빠른 실시간 업데이트)
         };
     </script>
 </body>
