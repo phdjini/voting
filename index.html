@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QR코드 실시간 투표 시스템</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js">
+    <title>QR코드 실시간 투표 시스템 - 2개 선택</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
     <style>
         * {
@@ -123,30 +123,117 @@
             display: block;
         }
 
-        .vote-form h3 {
-            color: #333;
-            margin-bottom: 15px;
+        .options-list {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
         }
 
-        .vote-options {
-            display: grid;
-            gap: 10px;
+        .option-item {
+            padding: 15px 20px;
+            margin: 10px 0;
+            background: linear-gradient(45deg, #f8f9fa, #e9ecef);
+            border-radius: 12px;
+            border-left: 4px solid #667eea;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            user-select: none;
+            position: relative;
         }
 
-        .vote-btn {
-            padding: 12px 20px;
-            border: none;
-            border-radius: 8px;
+        .option-item:hover {
+            background: linear-gradient(45deg, #e9ecef, #dee2e6);
+            transform: translateX(5px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .option-item.selected {
             background: linear-gradient(45deg, #667eea, #764ba2);
             color: white;
-            font-size: 1em;
+            border-left: 4px solid #28a745;
+            transform: translateX(5px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .option-item.selected::after {
+            content: "✓";
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+
+        .number-input-section {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .selection-info {
+            margin-bottom: 15px;
+            padding: 15px;
+            background: linear-gradient(45deg, #e8f5e8, #f0f8f0);
+            border-radius: 8px;
+            border-left: 4px solid #28a745;
+            display: none;
+        }
+
+        .selection-info.show {
+            display: block;
+        }
+
+        .selection-info h4 {
+            margin: 0 0 10px 0;
+            color: #155724;
+        }
+
+        .selected-list {
+            color: #155724;
+            font-weight: 500;
+        }
+
+        .submit-vote-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1em;
+            font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
         }
 
-        .vote-btn:hover {
+        .submit-vote-btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .submit-vote-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .selected-preview {
+            margin-top: 15px;
+            padding: 15px;
+            background: linear-gradient(45deg, #e8f5e8, #f0f8f0);
+            border-radius: 8px;
+            border-left: 4px solid #28a745;
+        }
+
+        .selected-preview div {
+            margin-top: 8px;
+            font-weight: 500;
+            color: #155724;
         }
 
         .stats {
@@ -209,8 +296,8 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>📊 실시간 투표 시스템</h1>
-            <p>QR코드로 접속하여 투표에 참여하세요!</p>
+            <h1>📊 선호 학과 조사</h1>
+            <p>QR코드로 접속하여 2개의 학과를 선택하세요!</p>
         </div>
         
         <div class="content">
@@ -231,18 +318,51 @@
                 <canvas id="voteChart" width="400" height="300"></canvas>
                 <div class="stats">
                     <p>총 투표수: <span id="totalVotes">0</span>표</p>
+                    <div style="margin-top: 15px; padding: 15px; background: #f8f9fa; border-radius: 8px; font-size: 0.9em;">
+                        <strong>📊 실시간 모니터링</strong>
+                        <div style="margin-top: 8px; color: #666;">
+                            다른 휴대폰에서 투표하면<br>
+                            즉시 그래프가 업데이트됩니다!
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
         
         <!-- 모바일 투표 폼 (QR코드로 접속시 표시) -->
         <div class="vote-form" id="voteForm">
-            <h3>투표에 참여하세요!</h3>
-            <div class="vote-options">
-                <button class="vote-btn" onclick="vote('옵션 A')">📊 옵션 A</button>
-                <button class="vote-btn" onclick="vote('옵션 B')">📈 옵션 B</button>
-                <button class="vote-btn" onclick="vote('옵션 C')">📉 옵션 C</button>
-                <button class="vote-btn" onclick="vote('옵션 D')">📋 옵션 D</button>
+            <h3>📊 투표에 참여하세요!</h3>
+            <p style="color: #666; margin-bottom: 15px; font-size: 0.9em;">
+                선호하는 <strong>2개의 학과</strong>를 터치해서 선택하세요
+            </p>
+            
+            <div class="options-list" id="optionsList">
+                <div class="option-item" data-index="0" onclick="toggleOption(0)">1. 컴퓨터공학과</div>
+                <div class="option-item" data-index="1" onclick="toggleOption(1)">2. 경영학과</div>
+                <div class="option-item" data-index="2" onclick="toggleOption(2)">3. 기계공학과</div>
+                <div class="option-item" data-index="3" onclick="toggleOption(3)">4. 없음</div>
+            </div>
+            
+            <div class="number-input-section">
+                <div class="selection-info" id="selectionInfo">
+                    <h4>✅ 선택한 학과:</h4>
+                    <div class="selected-list" id="selectedList"></div>
+                </div>
+                
+                <button class="submit-vote-btn" id="submitBtn" onclick="submitVote()" disabled>
+                    2개를 선택해주세요
+                </button>
+            </div>
+        </div>
+        
+        <!-- 투표 완료 후 실시간 결과 표시 -->
+        <div class="vote-result" id="voteResult" style="display: none;">
+            <div style="background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);">
+                <h2 style="text-align: center; color: #333; margin-bottom: 20px;">📈 실시간 결과</h2>
+                <canvas id="clientChart" width="400" height="300"></canvas>
+                <div class="client-stats" id="clientStats" style="text-align: center; margin-top: 20px; color: #666;">
+                    <p>총 투표수: <span id="clientTotalVotes">0</span>표</p>
+                </div>
             </div>
         </div>
     </div>
@@ -250,14 +370,21 @@
     <script>
         // 투표 데이터 저장
         let voteData = {
-            '옵션 A': 0,
-            '옵션 B': 0,
-            '옵션 C': 0,
-            '옵션 D': 0
+            '컴퓨터공학과': 0,
+            '경영학과': 0,
+            '기계공학과': 0,
+            '없음': 0
         };
 
         let chart;
-        let isAdmin = true; // 기본적으로 관리자 모드
+        let clientChart; // 클라이언트용 차트
+        let isAdmin = true;
+        let hasVoted = false;
+        let deviceId = localStorage.getItem('deviceId') || generateDeviceId();
+        let selectedOptions = []; // 선택된 옵션들
+        
+        // 학과 옵션 배열
+        let departments = ['컴퓨터공학과', '경영학과', '기계공학과', '없음'];
 
         // URL 파라미터 확인하여 클라이언트 모드 설정
         const urlParams = new URLSearchParams(window.location.search);
@@ -270,6 +397,13 @@
             document.getElementById('voteForm').classList.add('active');
         }
 
+        // 기기별 고유 ID 생성
+        function generateDeviceId() {
+            const id = 'device_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
+            localStorage.setItem('deviceId', id);
+            return id;
+        }
+
         // QR코드 생성
         function generateQR() {
             const baseUrl = window.location.origin + window.location.pathname;
@@ -278,11 +412,9 @@
             document.getElementById('urlDisplay').textContent = clientUrl;
             
             try {
-                // 기존 QR코드 제거
                 const qrContainer = document.getElementById('qrcode');
                 qrContainer.innerHTML = '';
                 
-                // QRious 라이브러리 사용
                 const qr = new QRious({
                     element: document.createElement('canvas'),
                     value: clientUrl,
@@ -297,7 +429,6 @@
                 console.log('QR코드가 생성되었습니다!');
             } catch (error) {
                 console.error('QR코드 생성 오류:', error);
-                // 대체 방법: Google Charts API 사용
                 const qrContainer = document.getElementById('qrcode');
                 qrContainer.innerHTML = `
                     <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(clientUrl)}" 
@@ -308,10 +439,129 @@
             }
         }
 
-        // 차트 초기화
-        function initChart() {
-            const ctx = document.getElementById('voteChart').getContext('2d');
-            chart = new Chart(ctx, {
+        // 옵션 선택/해제 토글
+        function toggleOption(index) {
+            const optionElement = document.querySelector(`[data-index="${index}"]`);
+            const isSelected = selectedOptions.includes(index);
+            
+            if (isSelected) {
+                // 선택 해제
+                selectedOptions = selectedOptions.filter(i => i !== index);
+                optionElement.classList.remove('selected');
+            } else {
+                // 선택
+                if (selectedOptions.length < 2) {
+                    selectedOptions.push(index);
+                    optionElement.classList.add('selected');
+                } else {
+                    alert('최대 2개까지만 선택할 수 있습니다!');
+                    return;
+                }
+            }
+            
+            updateSelectionDisplay();
+        }
+
+        // 선택 상태 표시 업데이트
+        function updateSelectionDisplay() {
+            const selectionInfo = document.getElementById('selectionInfo');
+            const selectedList = document.getElementById('selectedList');
+            const submitBtn = document.getElementById('submitBtn');
+            
+            if (selectedOptions.length > 0) {
+                selectionInfo.classList.add('show');
+                const selectedDepts = selectedOptions.map(i => `${i + 1}. ${departments[i]}`);
+                selectedList.innerHTML = selectedDepts.join('<br>');
+                
+                if (selectedOptions.length === 2) {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = '투표하기 🗳️';
+                    submitBtn.style.background = 'linear-gradient(45deg, #667eea, #764ba2)';
+                } else {
+                    submitBtn.disabled = true;
+                    submitBtn.textContent = `${2 - selectedOptions.length}개 더 선택해주세요`;
+                    submitBtn.style.background = '#ccc';
+                }
+            } else {
+                selectionInfo.classList.remove('show');
+                submitBtn.disabled = true;
+                submitBtn.textContent = '2개를 선택해주세요';
+                submitBtn.style.background = '#ccc';
+            }
+        }
+
+        // 투표 제출 함수
+        function submitVote() {
+            if (selectedOptions.length !== 2) {
+                alert('정확히 2개를 선택해주세요!');
+                return;
+            }
+
+            // 이미 투표했는지 확인
+            const votedDevices = JSON.parse(localStorage.getItem('votedDevices') || '[]');
+            if (votedDevices.includes(deviceId)) {
+                alert('이미 투표하셨습니다! 🗳️');
+                return;
+            }
+
+            // 투표 실행
+            const selectedDepts = selectedOptions.map(i => departments[i]);
+            selectedDepts.forEach(dept => {
+                voteData[dept]++;
+            });
+
+            // 투표한 기기 목록에 추가
+            votedDevices.push(deviceId);
+            localStorage.setItem('votedDevices', JSON.stringify(votedDevices));
+            
+            // 데이터 저장 및 동기화
+            saveVoteData();
+            updateChart();
+            updateStats();
+            
+            // 투표 완료 후 실시간 결과 표시
+            showVoteResult(selectedDepts);
+            
+            // 실시간 알림
+            showRealTimeNotification(selectedDepts.join(', '));
+            
+            console.log(`새 투표: ${selectedDepts.join(', ')}, 총 투표수: ${getTotalVotes()}`);
+        }
+
+        // 투표 데이터 저장
+        function saveVoteData() {
+            localStorage.setItem('voteData', JSON.stringify(voteData));
+            localStorage.setItem('lastUpdate', Date.now().toString());
+        }
+
+        // 투표 완료 후 실시간 결과 표시
+        function showVoteResult(selectedDepts) {
+            // 투표 폼 숨기기
+            document.getElementById('voteForm').style.display = 'none';
+            
+            // 결과 화면 표시
+            const resultDiv = document.getElementById('voteResult');
+            resultDiv.style.display = 'block';
+            
+            // 투표 완료 메시지 추가
+            const completionMessage = document.createElement('div');
+            completionMessage.innerHTML = `
+                <div style="text-align: center; padding: 20px; background: linear-gradient(45deg, #28a745, #20c997); border-radius: 15px; color: white; margin-bottom: 20px;">
+                    <h3 style="margin: 0 0 10px 0;">🎉 투표 완료!</h3>
+                    <p style="margin: 0; font-size: 0.9em;">선택: ${selectedDepts.join(', ')}</p>
+                </div>
+            `;
+            resultDiv.insertBefore(completionMessage, resultDiv.firstChild);
+            
+            // 클라이언트용 차트 초기화 및 표시
+            initClientChart();
+            updateClientChart();
+        }
+
+        // 클라이언트용 차트 초기화
+        function initClientChart() {
+            const ctx = document.getElementById('clientChart').getContext('2d');
+            clientChart = new Chart(ctx, {
                 type: 'bar',
                 data: {
                     labels: Object.keys(voteData),
@@ -319,16 +569,24 @@
                         label: '투표수',
                         data: Object.values(voteData),
                         backgroundColor: [
-                            'rgba(255, 99, 132, 0.8)',
-                            'rgba(54, 162, 235, 0.8)',
-                            'rgba(255, 205, 86, 0.8)',
-                            'rgba(75, 192, 192, 0.8)'
+                            'rgba(102, 126, 234, 0.8)',
+                            'rgba(240, 147, 251, 0.8)',
+                            'rgba(79, 172, 254, 0.8)',
+                            'rgba(67, 233, 123, 0.8)',
+                            'rgba(250, 112, 154, 0.8)',
+                            'rgba(168, 237, 234, 0.8)',
+                            'rgba(255, 154, 158, 0.8)',
+                            'rgba(255, 236, 210, 0.8)'
                         ],
                         borderColor: [
-                            'rgba(255, 99, 132, 1)',
-                            'rgba(54, 162, 235, 1)',
-                            'rgba(255, 205, 86, 1)',
-                            'rgba(75, 192, 192, 1)'
+                            'rgba(102, 126, 234, 1)',
+                            'rgba(240, 147, 251, 1)',
+                            'rgba(79, 172, 254, 1)',
+                            'rgba(67, 233, 123, 1)',
+                            'rgba(250, 112, 154, 1)',
+                            'rgba(168, 237, 234, 1)',
+                            'rgba(255, 154, 158, 1)',
+                            'rgba(255, 236, 210, 1)'
                         ],
                         borderWidth: 2,
                         borderRadius: 8
@@ -357,49 +615,233 @@
             });
         }
 
-        // 투표 함수
-        function vote(option) {
-            voteData[option]++;
-            updateChart();
-            updateStats();
-            
-            // 투표 완료 피드백
-            event.target.style.background = 'linear-gradient(45deg, #28a745, #20c997)';
-            event.target.textContent = '✅ 투표 완료!';
-            event.target.disabled = true;
-            
-            // 다른 버튼들 비활성화
-            const buttons = document.querySelectorAll('.vote-btn');
-            buttons.forEach(btn => btn.disabled = true);
-            
-            setTimeout(() => {
-                document.getElementById('voteForm').innerHTML = 
-                    '<h3 style="text-align: center; color: #28a745;">투표가 완료되었습니다! 🎉</h3>' +
-                    '<p style="text-align: center; margin-top: 10px;">결과를 확인해보세요.</p>';
-            }, 1000);
-            
-            // 로컬 스토리지에 투표 데이터 저장
-            localStorage.setItem('voteData', JSON.stringify(voteData));
+        // 클라이언트용 차트 업데이트
+        function updateClientChart() {
+            if (clientChart) {
+                clientChart.data.labels = Object.keys(voteData);
+                clientChart.data.datasets[0].data = Object.values(voteData);
+                clientChart.update();
+                
+                // 클라이언트 통계 업데이트
+                const total = getTotalVotes();
+                document.getElementById('clientTotalVotes').textContent = total;
+            }
+        }
+
+        // 실시간 알림
+        function showRealTimeNotification(option) {
+            if (isAdmin) {
+                const notification = document.createElement('div');
+                notification.style.cssText = `
+                    position: fixed; top: 20px; right: 20px; z-index: 1000;
+                    background: linear-gradient(45deg, #4facfe, #00f2fe);
+                    color: white; padding: 15px 20px; border-radius: 10px;
+                    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+                    animation: slideIn 0.5s ease-out;
+                `;
+                notification.innerHTML = `
+                    <strong>📱 새 투표!</strong><br>
+                    ${option}
+                `;
+                
+                if (!document.getElementById('notificationStyle')) {
+                    const style = document.createElement('style');
+                    style.id = 'notificationStyle';
+                    style.textContent = `
+                        @keyframes slideIn {
+                            from { transform: translateX(100%); opacity: 0; }
+                            to { transform: translateX(0); opacity: 1; }
+                        }
+                    `;
+                    document.head.appendChild(style);
+                }
+                
+                document.body.appendChild(notification);
+                
+                setTimeout(() => {
+                    notification.style.animation = 'slideIn 0.5s ease-out reverse';
+                    setTimeout(() => notification.remove(), 500);
+                }, 3000);
+            }
+        }
+
+        // 차트 초기화
+        function initChart() {
+            const ctx = document.getElementById('voteChart').getContext('2d');
+            chart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(voteData),
+                    datasets: [{
+                        label: '투표수',
+                        data: Object.values(voteData),
+                        backgroundColor: [
+                            'rgba(102, 126, 234, 0.8)',
+                            'rgba(240, 147, 251, 0.8)',
+                            'rgba(79, 172, 254, 0.8)',
+                            'rgba(67, 233, 123, 0.8)',
+                            'rgba(250, 112, 154, 0.8)',
+                            'rgba(168, 237, 234, 0.8)',
+                            'rgba(255, 154, 158, 0.8)',
+                            'rgba(255, 236, 210, 0.8)'
+                        ],
+                        borderColor: [
+                            'rgba(102, 126, 234, 1)',
+                            'rgba(240, 147, 251, 1)',
+                            'rgba(79, 172, 254, 1)',
+                            'rgba(67, 233, 123, 1)',
+                            'rgba(250, 112, 154, 1)',
+                            'rgba(168, 237, 234, 1)',
+                            'rgba(255, 154, 158, 1)',
+                            'rgba(255, 236, 210, 1)'
+                        ],
+                        borderWidth: 2,
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1
+                            }
+                        }
+                    },
+                    animation: {
+                        duration: 800,
+                        easing: 'easeInOutQuart'
+                    }
+                }
+            });
         }
 
         // 차트 업데이트
         function updateChart() {
+            chart.data.labels = Object.keys(voteData);
             chart.data.datasets[0].data = Object.values(voteData);
+            
+            const colors = [
+                'rgba(102, 126, 234, 0.8)',
+                'rgba(240, 147, 251, 0.8)',
+                'rgba(79, 172, 254, 0.8)',
+                'rgba(67, 233, 123, 0.8)',
+                'rgba(250, 112, 154, 0.8)',
+                'rgba(168, 237, 234, 0.8)',
+                'rgba(255, 154, 158, 0.8)',
+                'rgba(255, 236, 210, 0.8)'
+            ];
+            
+            const borderColors = [
+                'rgba(102, 126, 234, 1)',
+                'rgba(240, 147, 251, 1)',
+                'rgba(79, 172, 254, 1)',
+                'rgba(67, 233, 123, 1)',
+                'rgba(250, 112, 154, 1)',
+                'rgba(168, 237, 234, 1)',
+                'rgba(255, 154, 158, 1)',
+                'rgba(255, 236, 210, 1)'
+            ];
+            
+            chart.data.datasets[0].backgroundColor = colors.slice(0, Object.keys(voteData).length);
+            chart.data.datasets[0].borderColor = borderColors.slice(0, Object.keys(voteData).length);
+            
             chart.update();
         }
 
         // 통계 업데이트
         function updateStats() {
-            const total = Object.values(voteData).reduce((sum, count) => sum + count, 0);
+            const total = getTotalVotes();
             document.getElementById('totalVotes').textContent = total;
+            
+            if (isAdmin) {
+                let statsHtml = `총 투표수: <span id="totalVotes">${total}</span>표`;
+                
+                if (total > 0) {
+                    statsHtml += '<br><div style="margin-top: 10px; font-size: 0.9em; color: #666;">';
+                    Object.entries(voteData).forEach(([option, count]) => {
+                        const percentage = ((count / total) * 100).toFixed(1);
+                        statsHtml += `<div>${option}: ${count}표 (${percentage}%)</div>`;
+                    });
+                    statsHtml += '</div>';
+                }
+                
+                document.querySelector('.stats').innerHTML = statsHtml;
+            }
+        }
+
+        // 총 투표수 계산
+        function getTotalVotes() {
+            return Object.values(voteData).reduce((sum, count) => sum + count, 0);
         }
 
         // 새 투표 시작
         function startNewPoll() {
-            const newQuestion = prompt('새로운 투표 주제를 입력하세요:', '오늘 점심 메뉴는?');
+            const newQuestion = prompt('새로운 투표 주제를 입력하세요:', '선호 학과 조사');
             if (newQuestion) {
-                document.querySelector('.header h1').textContent = '📊 ' + newQuestion;
-                resetVotes();
+                const optionsText = prompt(
+                    '선택지를 입력하세요 (쉼표로 구분):\n예: 컴퓨터공학과,경영학과,기계공학과,없음',
+                    '컴퓨터공학과,경영학과,기계공학과,없음'
+                );
+                
+                if (optionsText) {
+                    const options = optionsText.split(',').map(opt => opt.trim()).filter(opt => opt.length > 0);
+                    
+                    if (options.length >= 2) {
+                        departments = [...options];
+                        
+                        voteData = {};
+                        options.forEach(option => {
+                            voteData[option] = 0;
+                        });
+                        
+                        document.querySelector('.header h1').textContent = '📊 ' + newQuestion;
+                        updateOptionsDisplay(options);
+                        updateChart();
+                        updateStats();
+                        
+                        // 클라이언트 차트도 업데이트
+                        if (clientChart) {
+                            updateClientChart();
+                        }
+                        
+                        localStorage.setItem('voteData', JSON.stringify(voteData));
+                        localStorage.setItem('pollQuestion', newQuestion);
+                        localStorage.setItem('pollOptions', JSON.stringify(options));
+                        
+                        console.log('새 투표가 시작되었습니다:', newQuestion, options);
+                    } else {
+                        alert('최소 2개의 선택지를 입력해주세요!');
+                    }
+                } else {
+                    alert('선택지를 입력해주세요!');
+                }
+            }
+        }
+
+        // 옵션 표시 업데이트
+        function updateOptionsDisplay(options) {
+            const optionsList = document.getElementById('optionsList');
+            if (optionsList) {
+                optionsList.innerHTML = '';
+                options.forEach((option, index) => {
+                    const div = document.createElement('div');
+                    div.className = 'option-item';
+                    div.setAttribute('data-index', index);
+                    div.textContent = `${index + 1}. ${option}`;
+                    div.onclick = () => toggleOption(index);
+                    optionsList.appendChild(div);
+                });
+                
+                // 선택 상태 초기화
+                selectedOptions = [];
+                updateSelectionDisplay();
             }
         }
 
@@ -408,37 +850,88 @@
             Object.keys(voteData).forEach(key => {
                 voteData[key] = 0;
             });
+            
+            localStorage.removeItem('votedDevices');
+            localStorage.setItem('lastUpdate', Date.now().toString());
+            
+            saveVoteData();
             updateChart();
             updateStats();
-            localStorage.setItem('voteData', JSON.stringify(voteData));
+            
+            console.log('투표가 초기화되었습니다.');
         }
 
         // 페이지 로드시 초기화
         window.onload = function() {
-            // 저장된 투표 데이터 불러오기
             const savedData = localStorage.getItem('voteData');
+            const savedQuestion = localStorage.getItem('pollQuestion');
+            const savedOptions = localStorage.getItem('pollOptions');
+            
             if (savedData) {
                 voteData = JSON.parse(savedData);
             }
             
+            if (savedQuestion) {
+                document.querySelector('.header h1').textContent = '📊 ' + savedQuestion;
+            }
+            
+            if (savedOptions) {
+                departments = JSON.parse(savedOptions);
+                if (!isAdmin) {
+                    updateOptionsDisplay(departments);
+                }
+            }
+            
             if (isAdmin) {
                 generateQR();
+            } else {
+                // 클라이언트 모드에서 초기 UI 설정
+                updateSelectionDisplay();
             }
+            
             initChart();
             updateStats();
             
-            // 주기적으로 데이터 동기화 (다른 탭에서 투표한 경우)
+            // 실시간 동기화
             setInterval(() => {
                 const currentData = localStorage.getItem('voteData');
+                const currentQuestion = localStorage.getItem('pollQuestion');
+                const currentOptions = localStorage.getItem('pollOptions');
+                
                 if (currentData) {
                     const newData = JSON.parse(currentData);
-                    if (JSON.stringify(newData) !== JSON.stringify(voteData)) {
+                    const dataChanged = JSON.stringify(newData) !== JSON.stringify(voteData);
+                    
+                    if (dataChanged) {
+                        const oldTotal = getTotalVotes();
                         voteData = newData;
+                        const newTotal = Object.values(voteData).reduce((sum, count) => sum + count, 0);
+                        
                         updateChart();
                         updateStats();
+                        
+                        if (isAdmin && newTotal > oldTotal) {
+                            console.log(`🔔 실시간 업데이트: 새 투표가 ${newTotal - oldTotal}개 들어왔습니다!`);
+                        }
                     }
                 }
-            }, 1000);
+                
+                if (currentQuestion) {
+                    const newQuestion = currentQuestion;
+                    const currentTitle = document.querySelector('.header h1').textContent;
+                    if (currentTitle !== '📊 ' + newQuestion) {
+                        document.querySelector('.header h1').textContent = '📊 ' + newQuestion;
+                    }
+                }
+                
+                if (currentOptions && !isAdmin) {
+                    const options = JSON.parse(currentOptions);
+                    if (departments.length !== options.length || !departments.every((dept, i) => dept === options[i])) {
+                        departments = [...options];
+                        updateOptionsDisplay(options);
+                    }
+                }
+            }, 500);
         };
     </script>
 </body>
