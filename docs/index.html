@@ -381,9 +381,19 @@
         let clientChart; // 클라이언트용 차트
         let isAdmin = true;
         let selectedOptions = []; // 선택된 옵션들
+        let lastVote = null; // 해당 기기의 마지막 투표 기록
         
         // 학과 옵션 배열
         let departments = ['컴퓨터공학과', '경영학과', '기계공학과', '없음'];
+        
+        // 기기별 고유 ID 생성
+        function generateDeviceId() {
+            const id = 'device_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
+            localStorage.setItem('deviceId', id);
+            return id;
+        }
+        
+        let deviceId = localStorage.getItem('deviceId') || generateDeviceId();
 
         // URL 파라미터 확인하여 클라이언트 모드 설정
         const urlParams = new URLSearchParams(window.location.search);
@@ -485,18 +495,32 @@
             }
         }
 
-        // 투표 제출 함수 (중복 투표 허용)
+        // 투표 제출 함수 (기기별 투표 기록 관리)
         function submitVote() {
             if (selectedOptions.length !== 2) {
                 alert('정확히 2개를 선택해주세요!');
                 return;
             }
 
-            // 투표 실행 (중복 투표 방지 제거)
+            // 이전 투표가 있다면 먼저 취소
+            if (lastVote) {
+                lastVote.forEach(dept => {
+                    if (voteData[dept] > 0) {
+                        voteData[dept]--;
+                    }
+                });
+                console.log('이전 투표 취소:', lastVote);
+            }
+
+            // 새로운 투표 실행
             const selectedDepts = selectedOptions.map(i => departments[i]);
             selectedDepts.forEach(dept => {
                 voteData[dept]++;
             });
+            
+            // 현재 투표를 기기의 마지막 투표로 저장
+            lastVote = [...selectedDepts];
+            localStorage.setItem(`lastVote_${deviceId}`, JSON.stringify(lastVote));
             
             // 데이터 저장 및 동기화
             saveVoteData();
@@ -518,7 +542,7 @@
             localStorage.setItem('lastUpdate', Date.now().toString());
         }
 
-        // 투표 완료 후 실시간 결과 표시 (다시 투표 버튼 추가)
+        // 투표 완료 후 실시간 결과 표시 (수정된 투표 메시지)
         function showVoteResult(selectedDepts) {
             // 투표 폼 숨기기
             document.getElementById('voteForm').style.display = 'none';
@@ -527,7 +551,7 @@
             const resultDiv = document.getElementById('voteResult');
             resultDiv.style.display = 'block';
             
-            // 투표 완료 메시지 추가 (다시 투표 버튼 포함)
+            // 투표 완료 메시지 추가 (수정된 메시지)
             const completionMessage = document.createElement('div');
             completionMessage.innerHTML = `
                 <div style="text-align: center; padding: 20px; background: linear-gradient(45deg, #28a745, #20c997); border-radius: 15px; color: white; margin-bottom: 20px;">
@@ -543,8 +567,11 @@
                         font-weight: 600;
                         transition: all 0.3s ease;
                     " onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
-                        🔄 다시 투표하기
+                        🔄 투표 수정하기
                     </button>
+                    <p style="margin: 10px 0 0 0; font-size: 0.8em; opacity: 0.8;">
+                        💡 이전 투표는 자동으로 취소되고 새로운 투표로 교체됩니다
+                    </p>
                 </div>
             `;
             resultDiv.insertBefore(completionMessage, resultDiv.firstChild);
@@ -554,7 +581,7 @@
             updateClientChart();
         }
 
-        // 투표 폼으로 돌아가기
+        // 투표 폼으로 돌아가기 (이전 투표 취소 안내)
         function resetVoteForm() {
             // 결과 화면 숨기기
             document.getElementById('voteResult').style.display = 'none';
@@ -578,7 +605,7 @@
             });
             updateSelectionDisplay();
             
-            console.log('투표 폼이 초기화되었습니다. 다시 투표할 수 있습니다.');
+            console.log('투표 폼이 초기화되었습니다. 이전 투표는 새로운 투표로 교체됩니다.');
         }
 
         // 클라이언트용 차트 초기화
