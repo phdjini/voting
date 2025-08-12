@@ -411,11 +411,20 @@
             document.getElementById('voteForm').classList.add('active');
         }
 
-        // QR코드 생성 (타임스탬프 포함)
+        // QR코드 생성 (데이터 동기화를 위한 정보 포함)
         function generateQR() {
             const baseUrl = window.location.origin + window.location.pathname;
             const timestamp = Date.now();
-            const clientUrl = baseUrl + `?mode=client&t=${timestamp}`;
+            
+            // 현재 투표 데이터를 URL 파라미터로 인코딩
+            const voteDataEncoded = btoa(JSON.stringify({
+                voteData: voteData,
+                question: document.querySelector('.header h1').textContent.replace('📊 ', ''),
+                departments: departments,
+                timestamp: timestamp
+            }));
+            
+            const clientUrl = baseUrl + `?mode=client&data=${voteDataEncoded}`;
             
             document.getElementById('urlDisplay').textContent = clientUrl;
             
@@ -430,7 +439,7 @@
                     backgroundAlpha: 1,
                     foreground: '#333333',
                     background: '#ffffff',
-                    level: 'M'
+                    level: 'L' // 데이터가 많아서 L로 변경
                 });
                 
                 qrContainer.appendChild(qr.canvas);
@@ -498,7 +507,7 @@
             }
         }
 
-        // 투표 제출 함수 (개별 기기 투표 교체 방식)
+        // 투표 제출시 QR코드 자동 갱신
         function submitVote() {
             if (selectedOptions.length !== 2) {
                 alert('정확히 2개를 선택해주세요!');
@@ -962,16 +971,66 @@
 
         // 페이지 로드시 초기화
         window.onload = function() {
-            // 먼저 초기화 상태 확인 (새로고침 감지)
+            // URL 파라미터에서 데이터 추출
             const urlParams = new URLSearchParams(window.location.search);
+            const encodedData = urlParams.get('data');
             const forceReset = urlParams.get('reset');
             
+            // QR코드로 접속한 경우 서버 데이터 로드
+            if (encodedData && !isAdmin) {
+                try {
+                    const serverData = JSON.parse(atob(encodedData));
+                    
+                    // 서버에서 받은 최신 데이터로 업데이트
+                    voteData = serverData.voteData || voteData;
+                    departments = serverData.departments || departments;
+                    
+                    // 제목 업데이트
+                    if (serverData.question) {
+                        document.querySelector('.header h1').textContent = '📊 ' + serverData.question;
+                    }
+                    
+                    // localStorage에 최신 데이터 저장
+                    localStorage.setItem('voteData', JSON.stringify(voteData));
+                    localStorage.setItem('pollQuestion', serverData.question || '선호 학과 조사1');
+                    localStorage.setItem('pollOptions', JSON.stringify(departments));
+                    
+                    console.log('🔄 서버에서 최신 데이터를 가져왔습니다:', voteData);
+                    
+                    // 성공 메시지 표시
+                    setTimeout(() => {
+                        const notification = document.createElement('div');
+                        notification.style.cssText = `
+                            position: fixed; top: 20px; left: 20px; right: 20px; z-index: 1000;
+                            background: linear-gradient(45deg, #28a745, #20c997);
+                            color: white; padding: 15px; border-radius: 10px;
+                            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+                            text-align: center; font-weight: 600;
+                        `;
+                        notification.innerHTML = `
+                            ✅ 최신 투표 데이터를 가져왔습니다!<br>
+                            <small style="opacity: 0.8;">총 투표수: ${getTotalVotes()}표</small>
+                        `;
+                        document.body.appendChild(notification);
+                        
+                        setTimeout(() => notification.remove(), 3000);
+                    }, 500);
+                    
+                } catch (error) {
+                    console.error('데이터 파싱 오류:', error);
+                    // 에러 시 기본 데이터 사용
+                    loadDefaultData();
+                }
+            } else {
+                // 일반 접속이거나 관리자인 경우
+                loadDefaultData();
+            }
+            
+            // 강제 초기화 처리
             if (forceReset === 'true') {
-                // URL에서 reset 파라미터 제거 (깔끔하게)
                 const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname + (mode === 'client' ? '?mode=client' : '');
                 window.history.replaceState({}, document.title, newUrl);
                 
-                // 강제 초기화
                 voteData = {
                     '컴퓨터공학과': 0,
                     '경영학과': 0,
@@ -985,6 +1044,35 @@
                 console.log('🔄 강제 초기화가 실행되었습니다.');
             }
             
+            // UI 초기화
+            if (!isAdmin) {
+                updateOptionsDisplay(departments);
+                updateSelectionDisplay();
+                
+                if (forceReset === 'true') {
+                    setTimeout(() => {
+                        alert('📊 투표가 초기화되었습니다!\n새로운 투표를 시작하세요.');
+                    }, 500);
+                }
+            } else {
+                generateQR();
+            }
+            
+            initChart();
+            updateStats();
+            
+            // 기기의 마지막 투표 기록 복원
+            const savedLastVote = localStorage.getItem(`lastVote_${deviceId}`);
+            if (savedLastVote) {
+                lastVote = JSON.parse(savedLastVote);
+            }
+            
+            // 실시간 동기화 시작
+            startRealTimeSync();
+        };
+
+        // 기본 데이터 로드 함수
+        function loadDefaultData() {
             const savedData = localStorage.getItem('voteData');
             const savedQuestion = localStorage.getItem('pollQuestion');
             const savedOptions = localStorage.getItem('pollOptions');
@@ -999,35 +1087,13 @@
             
             if (savedOptions) {
                 departments = JSON.parse(savedOptions);
-                if (!isAdmin) {
-                    updateOptionsDisplay(departments);
-                }
             }
-            
-            // 기기의 마지막 투표 기록 복원
-            const savedLastVote = localStorage.getItem(`lastVote_${deviceId}`);
-            if (savedLastVote) {
-                lastVote = JSON.parse(savedLastVote);
-            }
-            
-            if (isAdmin) {
-                generateQR();
-            } else {
-                // 클라이언트 모드에서 초기 UI 설정
-                updateSelectionDisplay();
-                
-                // 클라이언트에서 초기화 알림 표시
-                if (forceReset === 'true') {
-                    setTimeout(() => {
-                        alert('📊 투표가 초기화되었습니다!\n새로운 투표를 시작하세요.');
-                    }, 500);
-                }
-            }
-            
-            initChart();
-            updateStats();
-            
-            // 실시간 동기화
+        }
+
+        // 실시간 동기화 함수 분리
+        function startRealTimeSync() {
+        // 실시간 동기화 함수 분리
+        function startRealTimeSync() {
             setInterval(() => {
                 const currentData = localStorage.getItem('voteData');
                 const currentQuestion = localStorage.getItem('pollQuestion');
@@ -1077,6 +1143,8 @@
                         
                         if (isAdmin && newTotal > oldTotal) {
                             console.log(`🔔 실시간 업데이트: 새 투표가 ${newTotal - oldTotal}개 들어왔습니다!`);
+                            // QR코드 자동 갱신 (새 투표가 들어왔을 때)
+                            generateQR();
                         }
                         
                         // 초기화 감지 (총 투표수가 0이 된 경우)
