@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Terra LUNA/UST 동적 양팔저울 시뮬레이션</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            margin: 0;
+            padding: 20px;
+            color: white;
+            overflow-x: hidden;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .title {
+            text-align: center;
+            font-size: 2.5em;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+        
+        .simulation-container {
+            background: rgba(255,255,255,0.1);
+            border-radius: 15px;
+            padding: 30px;
+            margin: 30px 0;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        
+        .balance-scene {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 400px;
+            position: relative;
+            margin: 40px 0;
+        }
+        
+        /* 받침대 */
+        .balance-base {
+            width: 100px;
+            height: 30px;
+            background: linear-gradient(45deg, #8B4513, #CD853F);
+            position: absolute;
+            bottom: 20px;
+            border-radius: 5px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            z-index: 1;
+        }
+        
+        /* 중앙 지지대 */
+        .balance-pole {
+            width: 12px;
+            height: 180px;
+            background: linear-gradient(45deg, #8B4513, #CD853F);
+            position: absolute;
+            bottom: 50px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-radius: 6px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            z-index: 2;
+            transition: all 0.5s ease;
+        }
+        
+        /* 저울대 */
+        .balance-arm {
+            width: 500px;
+            height: 12px;
+            background: linear-gradient(45deg, #8B4513, #CD853F);
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-250px, -50%) rotate(0deg);
+            transform-origin: center center;
+            border-radius: 6px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            z-index: 3;
+            transition: transform 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+        
+        /* 중앙 받침점 */
+        .fulcrum {
+            width: 20px;
+            height: 20px;
+            background: #654321;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(45deg);
+            border-radius: 3px;
+            z-index: 4;
+            transition: all 0.3s ease;
+        }
+        
+        /* 연결 체인 */
+        .chain {
+            width: 3px;
+            background: repeating-linear-gradient(
+                to bottom,
+                #444 0px,
+                #444 4px,
+                #666 4px,
+                #666 8px
+            );
+            position: absolute;
+            top: 50%;
+            border-radius: 2px;
+            transition: height 0.8s ease;
+        }
+        
+        .chain-left {
+            left: 100px;
+            transform: translateY(-50%);
+            height: 40px;
+        }
+        
+        .chain-right {
+            right: 100px;
+            transform: translateY(-50%);
+            height: 40px;
+        }
+        
+        /* 저울 접시 */
+        .balance-plate {
+            width: 100px;
+            height: 15px;
+            background: linear-gradient(45deg, #C0C0C0, #E8E8E8);
+            border: 2px solid #999;
+            border-radius: 50px;
+            position: absolute;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding-top: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            z-index: 5;
+            transition: all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+        
+        .left-plate {
+            left: 50px;
+            top: calc(50% + 40px);
+        }
+        
+        .right-plate {
+            right: 50px;
+            top: calc(50% + 40px);
+        }
+        
+        /* 저울 위의 무게추들 */
+        .weights {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 3px;
+            position: absolute;
+            top: -10px;
+            transition: all 0.3s ease;
+        }
+        
+        .weight {
+            min-width: 60px;
+            height: 20px;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: bold;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+            transition: all 0.3s ease;
+        }
+        
+        .ust-weight {
+            background: linear-gradient(45deg, #FF4444, #FF6666);
+            color: white;
+        }
+        
+        .luna-weight {
+            background: linear-gradient(45deg, #4444FF, #6666FF);
+            color: white;
+        }
+        
+        .plate-label {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 5px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        }
+        
+        /* 컨트롤 패널 */
+        .controls {
+            text-align: center;
+            margin: 30px 0;
+        }
+        
+        .control-btn {
+            background: linear-gradient(45deg, #FF6B6B, #FF8E8E);
+            border: none;
+            color: white;
+            padding: 15px 30px;
+            margin: 0 10px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+        
+        .control-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.4);
+        }
+        
+        .control-btn.death-spiral {
+            background: linear-gradient(45deg, #DC143C, #FF6347);
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        
+        /* 상태 표시 */
+        .status-display {
+            display: flex;
+            justify-content: space-around;
+            margin: 20px 0;
+            text-align: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .status-box {
+            background: rgba(0,0,0,0.3);
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.3);
+            flex: 1;
+            min-width: 150px;
+            transition: all 0.3s ease;
+        }
+        
+        .status-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #FFD700;
+            transition: all 0.3s ease;
+        }
+        
+        .phase-indicator {
+            text-align: center;
+            font-size: 1.8em;
+            font-weight: bold;
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 15px;
+            transition: all 0.5s ease;
+        }
+        
+        .phase-normal {
+            background: rgba(76, 175, 80, 0.3);
+            border: 2px solid #4CAF50;
+            color: #4CAF50;
+        }
+        
+        .phase-stress {
+            background: rgba(255, 152, 0, 0.3);
+            border: 2px solid #FF9800;
+            color: #FF9800;
+        }
+        
+        .phase-collapse {
+            background: rgba(244, 67, 54, 0.3);
+            border: 2px solid #F44336;
+            color: #F44336;
+            animation: collapse-warning 1s infinite alternate;
+        }
+        
+        @keyframes collapse-warning {
+            from { box-shadow: 0 0 10px rgba(244, 67, 54, 0.5); }
+            to { box-shadow: 0 0 20px rgba(244, 67, 54, 0.8); }
+        }
+        
+        /* 특수 효과 */
+        .crash-effect {
+            transform: translateX(-50%) rotate(5deg) !important;
+            background: linear-gradient(45deg, #AA3333, #CC5555) !important;
+        }
+        
+        .broken-fulcrum {
+            background: #AA3333 !important;
+            animation: shake 0.5s infinite;
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translate(-50%, -50%) rotate(45deg); }
+            25% { transform: translate(-48%, -50%) rotate(43deg); }
+            75% { transform: translate(-52%, -50%) rotate(47deg); }
+        }
+        
+        .falling-weight {
+            animation: fall 2s ease-in infinite;
+        }
+        
+        @keyframes fall {
+            0% { transform: translateY(0); opacity: 1; }
+            100% { transform: translateY(100px); opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="title">Terra LUNA/UST 동적 양팔저울 시뮬레이션</h1>
+        
+        <div class="simulation-container">
+            <div class="phase-indicator" id="phaseIndicator">
+                🟢 정상 상태 - 안정적 균형
+            </div>
+            
+            <div class="balance-scene">
+                <div class="balance-base"></div>
+                <div class="balance-pole" id="balancePole"></div>
+                <div class="balance-arm" id="balanceArm"></div>
+                <div class="fulcrum" id="fulcrum"></div>
+                <div class="chain chain-left" id="chainLeft"></div>
+                <div class="chain chain-right" id="chainRight"></div>
+                
+                <div class="balance-plate left-plate" id="leftPlate">
+                    <div class="plate-label" style="color: #FF4444;">UST</div>
+                    <div class="weights" id="ustWeights">
+                        <div class="weight ust-weight" id="ustPrice">$1.00</div>
+                    </div>
+                </div>
+                
+                <div class="balance-plate right-plate" id="rightPlate">
+                    <div class="plate-label" style="color: #4444FF;">LUNA</div>
+                    <div class="weights" id="lunaWeights">
+                        <div class="weight luna-weight" id="lunaPrice">$80.00</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="status-display">
+                <div class="status-box">
+                    <div>UST 가격</div>
+                    <div class="status-value" id="ustDisplay">$1.00</div>
+                </div>
+                <div class="status-box">
+                    <div>LUNA 가격</div>
+                    <div class="status-value" id="lunaDisplay">$80.00</div>
+                </div>
+                <div class="status-box">
+                    <div>시스템 상태</div>
+                    <div class="status-value" id="systemStatus" style="color: #4CAF50;">안정</div>
+                </div>
+                <div class="status-box">
+                    <div>균형도</div>
+                    <div class="status-value" id="balanceStatus">0°</div>
+                </div>
+            </div>
+            
+            <div class="controls">
+                <button class="control-btn" onclick="startNormalOperation()">🟢 정상 운영</button>
+                <button class="control-btn" onclick="startStressTest()">🟡 스트레스 테스트</button>
+                <button class="control-btn death-spiral" onclick="startDeathSpiral()">🔴 데스 스파이럴</button>
+                <button class="control-btn" onclick="resetSystem()">🔄 시스템 리셋</button>
+            </div>
+        </div>
+        
+        <div style="background: rgba(0,0,0,0.4); padding: 25px; border-radius: 15px; margin-top: 30px; border: 2px solid #FFD700;">
+            <h3 style="color: #FFD700; text-align: center; margin-bottom: 20px;">🎮 시뮬레이션 조작법</h3>
+            <div style="font-size: 1.1em; line-height: 1.8;">
+                <strong>🟢 정상 운영:</strong> 소량의 변동으로 자연스러운 균형 유지<br><br>
+                <strong>🟡 스트레스 테스트:</strong> 대량 매도로 시스템이 흔들리지만 복구 시도<br><br>
+                <strong>🔴 데스 스파이럴:</strong> 임계점을 넘어 시스템이 붕괴하는 과정 시뮬레이션<br><br>
+                <strong>🔄 시스템 리셋:</strong> 모든 설정을 초기 상태로 복구
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class TerraSimulation {
+            constructor() {
+                this.ustPrice = 1.00;
+                this.lunaPrice = 80.00;
+                this.phase = 'normal'; // normal, stress, collapse
+                this.animationId = null;
+                this.isRunning = false;
+                
+                this.elements = {
+                    arm: document.getElementById('balanceArm'),
+                    pole: document.getElementById('balancePole'),
+                    fulcrum: document.getElementById('fulcrum'),
+                    leftPlate: document.getElementById('leftPlate'),
+                    rightPlate: document.getElementById('rightPlate'),
+                    chainLeft: document.getElementById('chainLeft'),
+                    chainRight: document.getElementById('chainRight'),
+                    ustPrice: document.getElementById('ustPrice'),
+                    lunaPrice: document.getElementById('lunaPrice'),
+                    ustDisplay: document.getElementById('ustDisplay'),
+                    lunaDisplay: document.getElementById('lunaDisplay'),
+                    systemStatus: document.getElementById('systemStatus'),
+                    balanceStatus: document.getElementById('balanceStatus'),
+                    phaseIndicator: document.getElementById('phaseIndicator'),
+                    ustWeights: document.getElementById('ustWeights'),
+                    lunaWeights: document.getElementById('lunaWeights')
+                };
+            }
+            
+            updateDisplay() {
+                this.elements.ustPrice.textContent = `$${this.ustPrice.toFixed(2)}`;
+                this.elements.lunaPrice.textContent = `$${this.lunaPrice.toFixed(2)}`;
+                this.elements.ustDisplay.textContent = `$${this.ustPrice.toFixed(2)}`;
+                this.elements.lunaDisplay.textContent = `$${this.lunaPrice.toFixed(2)}`;
+                
+                // 저울 기울기 계산 (UST 가격이 낮을수록 왼쪽이 무거워짐)
+                const priceRatio = this.ustPrice / 1.0;
+                const angle = Math.max(-45, Math.min(45, (1 - priceRatio) * 60));
+                
+                this.elements.arm.style.transform = `translate(-250px, -50%) rotate(${angle}deg)`;
+                this.elements.balanceStatus.textContent = `${angle.toFixed(1)}°`;
+                
+                // 접시 위치 조정
+                const leftY = 40 + (angle * 1.5);
+                const rightY = 40 - (angle * 1.5);
+                const leftChainH = 40 + (angle * 1.5);
+                const rightChainH = 40 - (angle * 1.5);
+                
+                this.elements.leftPlate.style.top = `calc(50% + ${leftY}px)`;
+                this.elements.rightPlate.style.top = `calc(50% + ${rightY}px)`;
+                this.elements.chainLeft.style.height = `${Math.max(10, leftChainH)}px`;
+                this.elements.chainRight.style.height = `${Math.max(10, rightChainH)}px`;
+                
+                // 상태 업데이트
+                if (this.ustPrice >= 0.98) {
+                    this.updatePhase('normal', '🟢 정상 상태 - 안정적 균형', '#4CAF50', '안정');
+                } else if (this.ustPrice >= 0.50) {
+                    this.updatePhase('stress', '🟡 스트레스 상태 - 균형 흔들림', '#FF9800', '경고');
+                } else {
+                    this.updatePhase('collapse', '🔴 시스템 붕괴 - 데스 스파이럼', '#F44336', '붕괴');
+                }
+            }
+            
+            updatePhase(phase, text, color, status) {
+                this.phase = phase;
+                this.elements.phaseIndicator.textContent = text;
+                this.elements.phaseIndicator.className = `phase-indicator phase-${phase}`;
+                this.elements.systemStatus.textContent = status;
+                this.elements.systemStatus.style.color = color;
+                
+                if (phase === 'collapse') {
+                    this.elements.pole.classList.add('crash-effect');
+                    this.elements.fulcrum.classList.add('broken-fulcrum');
+                } else {
+                    this.elements.pole.classList.remove('crash-effect');
+                    this.elements.fulcrum.classList.remove('broken-fulcrum');
+                }
+            }
+            
+            normalOperation() {
+                this.isRunning = true;
+                const animate = () => {
+                    if (!this.isRunning) return;
+                    
+                    // 작은 변동으로 균형 유지
+                    const randomFactor = (Math.random() - 0.5) * 0.02;
+                    this.ustPrice = Math.max(0.98, Math.min(1.02, this.ustPrice + randomFactor));
+                    this.lunaPrice = Math.max(75, Math.min(85, 80 + (Math.random() - 0.5) * 2));
+                    
+                    this.updateDisplay();
+                    this.animationId = requestAnimationFrame(animate);
+                };
+                animate();
+            }
+            
+            stressTest() {
+                this.isRunning = true;
+                let time = 0;
+                const animate = () => {
+                    if (!this.isRunning) return;
+                    
+                    time += 0.05;
+                    // 점진적으로 UST 가격 하락, LUNA 발행 증가로 가격 하락
+                    this.ustPrice = Math.max(0.70, 1.0 - Math.sin(time) * 0.15 - time * 0.02);
+                    this.lunaPrice = Math.max(30, 80 - time * 8 - Math.sin(time * 2) * 5);
+                    
+                    // 무게추 흔들림 효과
+                    if (Math.random() < 0.1) {
+                        this.addStressWeight();
+                    }
+                    
+                    this.updateDisplay();
+                    
+                    if (time < 10) {
+                        this.animationId = requestAnimationFrame(animate);
+                    }
+                };
+                animate();
+            }
+            
+            deathSpiral() {
+                this.isRunning = true;
+                let time = 0;
+                const animate = () => {
+                    if (!this.isRunning) return;
+                    
+                    time += 0.08;
+                    // 급격한 붕괴 시뮬레이션
+                    const collapseRate = Math.exp(time * 0.5);
+                    this.ustPrice = Math.max(0.01, 1.0 / collapseRate);
+                    this.lunaPrice = Math.max(0.001, 80 / (collapseRate * 2));
+                    
+                    // 무게추 떨어짐 효과
+                    if (Math.random() < 0.3) {
+                        this.addFallingWeight();
+                    }
+                    
+                    this.updateDisplay();
+                    
+                    if (time < 8) {
+                        this.animationId = requestAnimationFrame(animate);
+                    }
+                };
+                animate();
+            }
+            
+            addStressWeight() {
+                const isUST = Math.random() < 0.7; // UST 매도 압력이 더 큼
+                const container = isUST ? this.elements.ustWeights : this.elements.lunaWeights;
+                const weight = document.createElement('div');
+                weight.className = `weight ${isUST ? 'ust-weight' : 'luna-weight'}`;
+                weight.textContent = isUST ? '매도압력' : '발행증가';
+                container.appendChild(weight);
+                
+                setTimeout(() => {
+                    if (weight.parentNode) {
+                        weight.parentNode.removeChild(weight);
+                    }
+                }, 2000);
+            }
+            
+            addFallingWeight() {
+                const container = Math.random() < 0.5 ? this.elements.ustWeights : this.elements.lunaWeights;
+                const weight = document.createElement('div');
+                weight.className = `weight ${Math.random() < 0.5 ? 'ust-weight' : 'luna-weight'} falling-weight`;
+                weight.textContent = '붕괴';
+                container.appendChild(weight);
+                
+                setTimeout(() => {
+                    if (weight.parentNode) {
+                        weight.parentNode.removeChild(weight);
+                    }
+                }, 2000);
+            }
+            
+            reset() {
+                this.isRunning = false;
+                if (this.animationId) {
+                    cancelAnimationFrame(this.animationId);
+                }
+                
+                this.ustPrice = 1.00;
+                this.lunaPrice = 80.00;
+                
+                // 모든 추가 무게추 제거
+                this.elements.ustWeights.innerHTML = '<div class="weight ust-weight" id="ustPrice">$1.00</div>';
+                this.elements.lunaWeights.innerHTML = '<div class="weight luna-weight" id="lunaPrice">$80.00</div>';
+                
+                // 참조 업데이트
+                this.elements.ustPrice = document.getElementById('ustPrice');
+                this.elements.lunaPrice = document.getElementById('lunaPrice');
+                
+                this.updateDisplay();
+            }
+        }
+        
+        const simulation = new TerraSimulation();
+        
+        function startNormalOperation() {
+            simulation.reset();
+            setTimeout(() => simulation.normalOperation(), 100);
+        }
+        
+        function startStressTest() {
+            simulation.reset();
+            setTimeout(() => simulation.stressTest(), 100);
+        }
+        
+        function startDeathSpiral() {
+            simulation.reset();
+            setTimeout(() => simulation.deathSpiral(), 100);
+        }
+        
+        function resetSystem() {
+            simulation.reset();
+        }
+        
+        // 초기 상태로 정상 운영 시작
+        startNormalOperation();
+    </script>
+</body>
+</html>
