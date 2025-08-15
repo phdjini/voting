@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>디파이 레고 - 컴포저빌리티 시각화</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea, #764ba2, #f093fb);
+            margin: 0;
+            padding: 20px;
+            color: white;
+            overflow-x: hidden;
+        }
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+        .title {
+            text-align: center;
+            font-size: 3em;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 8px rgba(0,0,0,0.7);
+            background: linear-gradient(45deg, #FF6B35, #F7931E, #FFD700);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .subtitle {
+            text-align: center;
+            font-size: 1.3em;
+            margin-bottom: 40px;
+            opacity: 0.9;
+        }
+        
+        /* 레고 블록 스타일 */
+        .lego-block {
+            background: linear-gradient(145deg, rgba(255,255,255,0.2), rgba(255,255,255,0.05));
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 15px;
+            padding: 25px;
+            margin: 15px;
+            backdrop-filter: blur(15px);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .lego-block:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.4);
+        }
+        .lego-block::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(45deg, #FF6B35, #F7931E, #FFD700, #4CAF50, #2196F3);
+            border-radius: 15px;
+            z-index: -1;
+            animation: gradient-rotate 3s linear infinite;
+        }
+        
+        @keyframes gradient-rotate {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* 프리미티브 블록들 */
+        .primitives-section {
+            margin: 40px 0;
+        }
+        .primitives-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+        .primitive-block {
+            text-align: center;
+            position: relative;
+        }
+        .primitive-icon {
+            font-size: 3em;
+            margin-bottom: 15px;
+            display: block;
+        }
+        .primitive-title {
+            font-size: 1.4em;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #FFD700;
+        }
+        .primitive-examples {
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+        
+        /* 컴포저빌리티 플로우 */
+        .composability-section {
+            margin: 60px 0;
+            background: rgba(0,0,0,0.2);
+            border-radius: 20px;
+            padding: 40px;
+        }
+        .flow-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 30px;
+        }
+        .flow-step {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            position: relative;
+        }
+        .step-block {
+            background: linear-gradient(135deg, rgba(255,255,255,0.15), rgba(255,255,255,0.05));
+            border: 3px solid;
+            border-radius: 20px;
+            padding: 30px;
+            min-width: 250px;
+            text-align: center;
+            position: relative;
+            transition: all 0.5s ease;
+            backdrop-filter: blur(20px);
+        }
+        .step-block.active {
+            transform: scale(1.05);
+            box-shadow: 0 0 30px rgba(255,215,0,0.5);
+        }
+        
+        /* 각 단계별 색상 */
+        .step-1 { border-color: #4CAF50; color: #4CAF50; }
+        .step-2 { border-color: #2196F3; color: #2196F3; }
+        .step-3 { border-color: #FF9800; color: #FF9800; }
+        .step-4 { border-color: #9C27B0; color: #9C27B0; }
+        .step-5 { border-color: #F44336; color: #F44336; }
+        .step-6 { border-color: #FFD700; color: #FFD700; }
+        
+        .step-icon {
+            font-size: 2.5em;
+            margin-bottom: 15px;
+        }
+        .step-title {
+            font-size: 1.3em;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .step-detail {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+        
+        /* 화살표 애니메이션 */
+        .flow-arrow {
+            font-size: 2em;
+            color: #FFD700;
+            animation: arrow-bounce 2s infinite;
+            margin: 10px 0;
+        }
+        
+        @keyframes arrow-bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-10px); }
+            60% { transform: translateY(-5px); }
+        }
+        
+        /* 데이터 플로우 */
+        .data-flow {
+            position: absolute;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, transparent, #FFD700, transparent);
+            top: 50%;
+            left: 0;
+            opacity: 0;
+            animation: data-pulse 3s infinite;
+        }
+        .step-block.active .data-flow {
+            opacity: 1;
+        }
+        
+        @keyframes data-pulse {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+        
+        /* 수익률 표시 */
+        .yield-display {
+            background: rgba(255,215,0,0.2);
+            border: 2px solid #FFD700;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        .yield-value {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #FFD700;
+            animation: yield-glow 2s infinite alternate;
+        }
+        
+        @keyframes yield-glow {
+            0% { text-shadow: 0 0 10px #FFD700; }
+            100% { text-shadow: 0 0 20px #FFD700, 0 0 30px #FFD700; }
+        }
+        
+        /* 컨트롤 패널 */
+        .controls {
+            background: rgba(255,255,255,0.1);
+            border-radius: 20px;
+            padding: 30px;
+            margin: 40px 0;
+            text-align: center;
+        }
+        .btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 10px;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.4);
+        }
+        .btn.active {
+            background: linear-gradient(135deg, #FF6B35, #F7931E);
+        }
+        
+        /* 통계 패널 */
+        .stats-panel {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+        .stat-card {
+            background: rgba(255,255,255,0.1);
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+        }
+        .stat-value {
+            font-size: 1.8em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+        
+        /* 반응형 */
+        @media (max-width: 768px) {
+            .primitives-grid {
+                grid-template-columns: 1fr;
+            }
+            .step-block {
+                min-width: 200px;
+                padding: 20px;
+            }
+        }
+        
+        /* 파티클 효과 */
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: #FFD700;
+            border-radius: 50%;
+            pointer-events: none;
+            animation: particle-float 4s infinite linear;
+        }
+        
+        @keyframes particle-float {
+            0% {
+                transform: translateY(100vh) translateX(0);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            90% {
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-100px) translateX(100px);
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="title">🧱 디파이 레고 (DeFi Lego)</h1>
+        <p class="subtitle">프로토콜들의 완벽한 조합으로 만드는 금융 혁신</p>
+        
+        <!-- 기본 프리미티브들 -->
+        <div class="primitives-section">
+            <h2 style="text-align: center; color: #FFD700; font-size: 2em; margin-bottom: 30px;">
+                🔧 기본 프리미티브 (Building Blocks)
+            </h2>
+            
+            <div class="primitives-grid">
+                <div class="lego-block primitive-block" data-primitive="amm">
+                    <div class="primitive-icon">🔄</div>
+                    <div class="primitive-title">Automated Market Maker</div>
+                    <div class="primitive-examples">Uniswap, SushiSwap</div>
+                    <div style="margin-top: 10px; font-size: 0.8em;">
+                        자동화된 거래소
+                    </div>
+                </div>
+                
+                <div class="lego-block primitive-block" data-primitive="lending">
+                    <div class="primitive-icon">🏦</div>
+                    <div class="primitive-title">Lending Protocol</div>
+                    <div class="primitive-examples">Aave, Compound</div>
+                    <div style="margin-top: 10px; font-size: 0.8em;">
+                        대출/예금 프로토콜
+                    </div>
+                </div>
+                
+                <div class="lego-block primitive-block" data-primitive="synthetic">
+                    <div class="primitive-icon">🎭</div>
+                    <div class="primitive-title">Synthetic Assets</div>
+                    <div class="primitive-examples">Synthetix</div>
+                    <div style="margin-top: 10px; font-size: 0.8em;">
+                        합성 자산 생성
+                    </div>
+                </div>
+                
+                <div class="lego-block primitive-block" data-primitive="derivatives">
+                    <div class="primitive-icon">📈</div>
+                    <div class="primitive-title">Derivatives</div>
+                    <div class="primitive-examples">dYdX, Perpetual</div>
+                    <div style="margin-top: 10px; font-size: 0.8em;">
+                        파생상품 거래
+                    </div>
+                </div>
+                
+                <div class="lego-block primitive-block" data-primitive="yield">
+                    <div class="primitive-icon">🌾</div>
+                    <div class="primitive-title">Yield Farming</div>
+                    <div class="primitive-examples">Yearn Finance</div>
+                    <div style="margin-top: 10px; font-size: 0.8em;">
+                        수익률 최적화
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 컴포저빌리티 플로우 -->
+        <div class="composability-section">
+            <h2 style="text-align: center; color: #FFD700; font-size: 2em; margin-bottom: 30px;">
+                ⚡ 컴포저빌리티 플로우
+            </h2>
+            
+            <div class="flow-container" id="flowContainer">
+                <div class="flow-step">
+                    <div class="step-block step-1" id="step1">
+                        <div class="step-icon">💰</div>
+                        <div class="step-title">사용자 예금</div>
+                        <div class="step-detail">$1000 USDC 예금</div>
+                        <div class="data-flow"></div>
+                    </div>
+                </div>
+                
+                <div class="flow-arrow">⬇️</div>
+                
+                <div class="flow-step">
+                    <div class="step-block step-2" id="step2">
+                        <div class="step-icon">🏦</div>
+                        <div class="step-title">Aave 렌딩</div>
+                        <div class="step-detail">aUSDC 토큰 수령<br>기본 이자 수익</div>
+                        <div class="data-flow"></div>
+                    </div>
+                </div>
+                
+                <div class="flow-arrow">⬇️</div>
+                
+                <div class="flow-step">
+                    <div class="step-block step-3" id="step3">
+                        <div class="step-icon">🔗</div>
+                        <div class="step-title">담보로 활용</div>
+                        <div class="step-detail">aUSDC를 담보로<br>추가 자산 대출</div>
+                        <div class="data-flow"></div>
+                    </div>
+                </div>
+                
+                <div class="flow-arrow">⬇️</div>
+                
+                <div class="flow-step">
+                    <div class="step-block step-4" id="step4">
+                        <div class="step-icon">🔄</div>
+                        <div class="step-title">Uniswap LP</div>
+                        <div class="step-detail">유동성 공급<br>LP 토큰 획득</div>
+                        <div class="data-flow"></div>
+                    </div>
+                </div>
+                
+                <div class="flow-arrow">⬇️</div>
+                
+                <div class="flow-step">
+                    <div class="step-block step-5" id="step5">
+                        <div class="step-icon">🌾</div>
+                        <div class="step-title">Yield Farming</div>
+                        <div class="step-detail">LP 토큰 스테이킹<br>추가 보상 토큰</div>
+                        <div class="data-flow"></div>
+                    </div>
+                </div>
+                
+                <div class="flow-arrow">⬇️</div>
+                
+                <div class="flow-step">
+                    <div class="step-block step-6" id="step6">
+                        <div class="step-icon">🎁</div>
+                        <div class="step-title">복합 수익</div>
+                        <div class="step-detail">모든 수익원 통합<br>최대 수익률 달성</div>
+                        <div class="data-flow"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 수익률 표시 -->
+            <div class="yield-display">
+                <div>총 예상 수익률 (연간)</div>
+                <div class="yield-value" id="totalYield">0%</div>
+                <div style="font-size: 0.9em; margin-top: 10px;">
+                    기본 이자 + LP 수수료 + 파밍 보상 + 토큰 인센티브
+                </div>
+            </div>
+        </div>
+        
+        <!-- 통계 패널 -->
+        <div class="stats-panel">
+            <div class="stat-card">
+                <div class="stat-value" style="color: #4CAF50;" id="baseAPY">3.5%</div>
+                <div class="stat-label">Aave 기본 이자</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" style="color: #2196F3;" id="lpFees">8.2%</div>
+                <div class="stat-label">LP 수수료</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" style="color: #FF9800;" id="farmingRewards">15.7%</div>
+                <div class="stat-label">파밍 보상</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" style="color: #9C27B0;" id="tokenIncentives">12.3%</div>
+                <div class="stat-label">토큰 인센티브</div>
+            </div>
+        </div>
+        
+        <!-- 컨트롤 패널 -->
+        <div class="controls">
+            <h3 style="color: #FFD700; margin-bottom: 20px;">시뮬레이션 컨트롤</h3>
+            <button class="btn" onclick="startFlow()">🚀 플로우 시작</button>
+            <button class="btn" onclick="pauseFlow()">⏸️ 일시정지</button>
+            <button class="btn" onclick="resetFlow()">🔄 리셋</button>
+            <button class="btn" onclick="autoMode()" id="autoBtn">⚡ 자동 모드</button>
+            <button class="btn" onclick="showRisks()">⚠️ 리스크 보기</button>
+        </div>
+        
+        <!-- 리스크 알림 -->
+        <div id="riskPanel" style="display: none; background: rgba(244,67,54,0.2); border: 2px solid #F44336; border-radius: 15px; padding: 20px; margin: 20px 0;">
+            <h3 style="color: #F44336;">⚠️ 컴포저빌리티 리스크</h3>
+            <ul style="text-align: left;">
+                <li><strong>스마트 컨트랙트 리스크:</strong> 각 프로토콜의 버그나 해킹 위험</li>
+                <li><strong>임시적 손실:</strong> LP 제공 시 자산 가격 변동 위험</li>
+                <li><strong>청산 리스크:</strong> 담보 가치 하락 시 강제 청산</li>
+                <li><strong>가스비 증가:</strong> 복잡한 거래로 인한 높은 수수료</li>
+                <li><strong>컴포저빌리티 위험:</strong> 연결된 프로토콜 중 하나 실패 시 전체 영향</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        let currentStep = 0;
+        let isFlowActive = false;
+        let autoModeActive = false;
+        let flowInterval;
+        
+        // 수익률 데이터
+        const yieldData = {
+            baseAPY: 3.5,
+            lpFees: 8.2,
+            farmingRewards: 15.7,
+            tokenIncentives: 12.3
+        };
+        
+        function updateYieldDisplay() {
+            const total = Object.values(yieldData).reduce((sum, rate) => sum + rate, 0);
+            document.getElementById('totalYield').textContent = `${total.toFixed(1)}%`;
+            
+            document.getElementById('baseAPY').textContent = `${yieldData.baseAPY}%`;
+            document.getElementById('lpFees').textContent = `${yieldData.lpFees}%`;
+            document.getElementById('farmingRewards').textContent = `${yieldData.farmingRewards}%`;
+            document.getElementById('tokenIncentives').textContent = `${yieldData.tokenIncentives}%`;
+        }
+        
+        function startFlow() {
+            if (isFlowActive) return;
+            isFlowActive = true;
+            currentStep = 0;
+            
+            // 모든 스텝 초기화
+            for (let i = 1; i <= 6; i++) {
+                document.getElementById(`step${i}`).classList.remove('active');
+            }
+            
+            executeFlow();
+        }
+        
+        function executeFlow() {
+            if (!isFlowActive) return;
+            
+            currentStep++;
+            if (currentStep > 6) {
+                currentStep = 1; // 루프
+            }
+            
+            // 이전 스텝 비활성화
+            for (let i = 1; i <= 6; i++) {
+                if (i !== currentStep) {
+                    document.getElementById(`step${i}`).classList.remove('active');
+                }
+            }
+            
+            // 현재 스텝 활성화
+            document.getElementById(`step${currentStep}`).classList.add('active');
+            
+            // 단계별 효과
+            addStepEffects(currentStep);
+            
+            // 수익률 업데이트
+            updateStepYield(currentStep);
+            
+            // 다음 스텝 예약
+            if (isFlowActive) {
+                setTimeout(() => {
+                    if (autoModeActive) {
+                        executeFlow();
+                    }
+                }, 2000);
+            }
+        }
+        
+        function addStepEffects(step) {
+            createParticles();
+            
+            // 단계별 특별 효과
+            switch(step) {
+                case 1:
+                    console.log('💰 사용자가 $1000 USDC를 예금했습니다');
+                    break;
+                case 2:
+                    console.log('🏦 Aave에서 aUSDC 토큰을 받았습니다');
+                    yieldData.baseAPY = 3.5 + Math.random() * 2;
+                    break;
+                case 3:
+                    console.log('🔗 aUSDC를 담보로 추가 자산을 대출했습니다');
+                    break;
+                case 4:
+                    console.log('🔄 Uniswap에 유동성을 공급했습니다');
+                    yieldData.lpFees = 6 + Math.random() * 8;
+                    break;
+                case 5:
+                    console.log('🌾 Yield Farming을 시작했습니다');
+                    yieldData.farmingRewards = 10 + Math.random() * 20;
+                    break;
+                case 6:
+                    console.log('🎁 모든 수익을 통합했습니다');
+                    yieldData.tokenIncentives = 8 + Math.random() * 15;
+                    break;
+            }
+            
+            updateYieldDisplay();
+        }
+        
+        function updateStepYield(step) {
+            // 단계별 누적 수익률 시뮬레이션
+            const yields = [0, 3.5, 11.7, 11.7, 27.4, 39.7];
+            const cumulativeYield = yields[step - 1] || 0;
+            
+            // 약간의 랜덤 변동
+            const finalYield = cumulativeYield + (Math.random() - 0.5) * 2;
+            
+            // 애니메이션으로 수치 업데이트
+            animateNumber('totalYield', finalYield, '%');
+        }
+        
+        function animateNumber(elementId, targetValue, suffix = '') {
+            const element = document.getElementById(elementId);
+            const startValue = 0;
+            const duration = 1000;
+            const startTime = performance.now();
+            
+            function update(currentTime) {
+                const elapsed = currentTime - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                
+                const currentValue = startValue + (targetValue - startValue) * progress;
+                element.textContent = `${currentValue.toFixed(1)}${suffix}`;
+                
+                if (progress < 1) {
+                    requestAnimationFrame(update);
+                }
+            }
+            
+            requestAnimationFrame(update);
+        }
+        
+        function createParticles() {
+            for (let i = 0; i < 5; i++) {
+                setTimeout(() => {
+                    const particle = document.createElement('div');
+                    particle.className = 'particle';
+                    particle.style.left = Math.random() * 100 + 'vw';
+                    particle.style.animationDelay = Math.random() * 2 + 's';
+                    document.body.appendChild(particle);
+                    
+                    setTimeout(() => {
+                        particle.remove();
+                    }, 4000);
+                }, i * 100);
+            }
+        }
+        
+        function pauseFlow() {
+            isFlowActive = false;
+            autoModeActive = false;
+            document.getElementById('autoBtn').textContent = '⚡ 자동 모드';
+        }
+        
+        function resetFlow() {
+            pauseFlow();
+            currentStep = 0;
+            
+            // 모든 스텝 비활성화
+            for (let i = 1; i <= 6; i++) {
+                document.getElementById(`step${i}`).classList.remove('active');
+            }
+            
+            // 수익률 초기화
+            yieldData.baseAPY = 3.5;
+            yieldData.lpFees = 8.2;
+            yieldData.farmingRewards = 15.7;
+            yieldData.tokenIncentives = 12.3;
+            updateYieldDisplay();
+        }
+        
+        function autoMode() {
+            if (autoModeActive) {
+                pauseFlow();
+            } else {
+                autoModeActive = true;
+                document.getElementById('autoBtn').textContent = '⏹️ 자동 중지';
+                startFlow();
+            }
+        }
+        
+        function showRisks() {
+            const panel = document.getElementById('riskPanel');
+            panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+        }
+        
+        // 프리미티브 블록 클릭 이벤트
+        document.querySelectorAll('.primitive-block').forEach(block => {
+            block.addEventListener('click', function() {
+                const primitive = this.dataset.primitive;
+                
+                // 하이라이트 효과
+                this.style.transform = 'scale(1.1)';
+                setTimeout(() => {
+                    this.style.transform = 'scale(1)';
+                }, 300);
+                
+                // 관련 정보 표시
+                showPrimitiveInfo(primitive);
+            });
+        });
+        
+        function showPrimitiveInfo(primitive) {
+            const info = {
+                amm: 'AMM은 유동성 풀을 통해 자동화된 거래를 제공합니다. 사용자는 LP 토큰을 받고 거래 수수료를 얻습니다.',
+                lending: '렌딩 프로토콜은 예금자에게 이자를 제공하고, 담보를 통한 대출 서비스를 제공합니다.',
+                synthetic: '합성 자산은 실물 자산의 가격을 추적하는 토큰을 생성하여 다양한 자산에 노출될 수 있게 합니다.',
+                derivatives: '파생상품 프로토콜은 선물, 옵션 등 복잡한 금융 상품을 탈중앙화 환경에서 제공합니다.',
+                yield: 'Yield Farming은 여러 프로토콜을 조합하여 최적의 수익률을 추구하는 전략입니다.'
+            };
+            
+            alert(info[primitive] || '정보를 찾을 수 없습니다.');
+        }
+        
+        // 실시간 시장 데이터 시뮬레이션
+        setInterval(() => {
+            if (!autoModeActive) {
+                // 수익률 미세 조정
+                Object.keys(yieldData).forEach(key => {
+                    const variation = (Math.random() - 0.5) * 0.2;
+                    yieldData[key] = Math.max(0, yieldData[key] + variation);
+                });
+                
+                updateYieldDisplay();
+            }
+        }, 5000);
+        
+        // 초기화
+        updateYieldDisplay();
+        
+        // 배경 파티클 효과
+        setInterval(createParticles, 3000);
+        
+    </script>
+</body>
+</html>
