@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>멀티시그 보물상자</title>
+    <style>
+        body {
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            background: linear-gradient(135deg, #74b9ff, #0984e3);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #2d3436;
+            font-size: 2.5em;
+            margin-bottom: 30px;
+        }
+        
+        .treasure-box {
+            width: 200px;
+            height: 150px;
+            background: linear-gradient(45deg, #fdcb6e, #e17055);
+            border: 5px solid #8b4513;
+            border-radius: 10px;
+            margin: 20px auto;
+            position: relative;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        
+        .treasure-box::before {
+            content: '';
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 40px;
+            background: #8b4513;
+            border-radius: 10px 10px 0 0;
+        }
+        
+        .lock-container {
+            position: absolute;
+            top: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 10px;
+        }
+        
+        .lock {
+            width: 30px;
+            height: 35px;
+            background: #636e72;
+            border-radius: 5px 5px 10px 10px;
+            position: relative;
+        }
+        
+        .lock::before {
+            content: '';
+            position: absolute;
+            top: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 20px;
+            height: 20px;
+            border: 3px solid #636e72;
+            border-bottom: none;
+            border-radius: 50% 50% 0 0;
+            background: transparent;
+        }
+        
+        .person {
+            width: 80px;
+            height: 120px;
+            margin: 20px;
+            text-align: center;
+            display: inline-block;
+        }
+        
+        .person-head {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            margin: 0 auto 10px;
+        }
+        
+        .person-body {
+            width: 60px;
+            height: 60px;
+            border-radius: 10px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 18px;
+        }
+        
+        .person-a .person-head { background: #ff7675; }
+        .person-a .person-body { background: #fd79a8; }
+        .person-b .person-head { background: #74b9ff; }
+        .person-b .person-body { background: #0984e3; }
+        
+        .key {
+            width: 30px;
+            height: 15px;
+            background: #f39c12;
+            border-radius: 5px;
+            margin: 10px auto;
+            position: relative;
+        }
+        
+        .key::before {
+            content: '';
+            position: absolute;
+            right: -5px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 0;
+            height: 0;
+            border-left: 8px solid #f39c12;
+            border-top: 5px solid transparent;
+            border-bottom: 5px solid transparent;
+        }
+        
+        .step {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            border-left: 5px solid #00b894;
+        }
+        
+        .step h3 {
+            color: #00b894;
+            margin-top: 0;
+            font-size: 1.5em;
+        }
+        
+        .flex-center {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 30px;
+            margin: 20px 0;
+        }
+        
+        .arrow {
+            font-size: 2em;
+            color: #00b894;
+        }
+        
+        .coins {
+            display: flex;
+            gap: 5px;
+            justify-content: center;
+            margin: 10px 0;
+        }
+        
+        .coin {
+            width: 25px;
+            height: 25px;
+            background: #f1c40f;
+            border-radius: 50%;
+            border: 2px solid #f39c12;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .explanation {
+            background: #e3f2fd;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 15px 0;
+            border-left: 4px solid #2196f3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏆 멀티시그 보물상자 🏆</h1>
+        
+        <div class="explanation">
+            <strong>멀티시그</strong>는 마법의 보물상자다! 
+            두 개의 자물쇠가 있어서 <strong>두 명이 모두 열쇠를 가져와야</strong> 열 수 있다.
+        </div>
+
+        <div class="step">
+            <h3>1단계: 친구들이 동전을 가져온다</h3>
+            <div class="flex-center">
+                <div class="person person-a">
+                    <div class="person-head"></div>
+                    <div class="person-body">A</div>
+                    <div class="coins">
+                        <div class="coin">5</div>
+                        <div class="coin">만</div>
+                        <div class="coin">원</div>
+                    </div>
+                    <div class="key"></div>
+                </div>
+                
+                <div class="arrow">+</div>
+                
+                <div class="person person-b">
+                    <div class="person-head"></div>
+                    <div class="person-body">B</div>
+                    <div class="coins">
+                        <div class="coin">3</div>
+                        <div class="coin">만</div>
+                        <div class="coin">원</div>
+                    </div>
+                    <div class="key"></div>
+                </div>
+                
+                <div class="arrow">→</div>
+                
+                <div class="treasure-box">
+                    <div class="lock-container">
+                        <div class="lock"></div>
+                        <div class="lock"></div>
+                    </div>
+                </div>
+            </div>
+            <p style="text-align: center; font-size: 1.2em;">
+                A가 5만원, B가 3만원을 보물상자에 넣는다!<br>
+                <strong>둘 다 열쇠를 가져와야</strong> 상자에 넣을 수 있다.
+            </p>
+        </div>
+
+        <div class="step">
+            <h3>2단계: 보물상자 안에서 서로 주고받기</h3>
+            <div style="text-align: center; font-size: 1.3em; padding: 20px;">
+                💰 A: 5만원 → 2만원<br>
+                💰 B: 3만원 → 6만원<br>
+                <div style="color: #00b894; margin-top: 10px;">
+                    (A가 B에게 3만원을 줬다!)
+                </div>
+            </div>
+            <p style="text-align: center;">
+                상자는 그대로 두고, 안에서 <strong>누가 얼마를 가질지만</strong> 바꾼다!
+            </p>
+        </div>
+
+        <div class="step">
+            <h3>3단계: 상자를 열어서 나눠가진다</h3>
+            <div class="flex-center">
+                <div class="treasure-box">
+                    <div class="lock-container">
+                        <div class="lock"></div>
+                        <div class="lock"></div>
+                    </div>
+                </div>
+                
+                <div class="arrow">→</div>
+                
+                <div class="person person-a">
+                    <div class="person-head"></div>
+                    <div class="person-body">A</div>
+                    <div class="coins">
+                        <div class="coin">2</div>
+                        <div class="coin">만</div>
+                        <div class="coin">원</div>
+                    </div>
+                    <div class="key"></div>
+                </div>
+                
+                <div class="arrow">+</div>
+                
+                <div class="person person-b">
+                    <div class="person-head"></div>
+                    <div class="person-body">B</div>
+                    <div class="coins">
+                        <div class="coin">6</div>
+                        <div class="coin">만</div>
+                        <div class="coin">원</div>
+                    </div>
+                    <div class="key"></div>
+                </div>
+            </div>
+            <p style="text-align: center;">
+                마지막에 상자를 열 때도 <strong>둘 다 열쇠를 가져와야</strong> 한다!
+            </p>
+        </div>
+
+        <div class="explanation" style="background: #fff3e0; border-color: #ff9800;">
+            <h3 style="color: #ff9800; margin-top: 0;">🔐 왜 이렇게 하나?</h3>
+            <ul style="font-size: 1.1em;">
+                <li><strong>안전하다:</strong> 한 명이 혼자서는 상자를 열 수 없다</li>
+                <li><strong>공정하다:</strong> 둘 다 동의해야만 돈을 넣거나 뺄 수 있다</li>
+                <li><strong>빠르다:</strong> 중간에 돈을 주고받을 때는 상자를 열지 않아도 된다</li>
+            </ul>
+        </div>
+
+        <div style="text-align: center; font-size: 1.3em; color: #2d3436; margin-top: 30px;">
+            <strong>멀티시그 = 마법의 두 자물쇠 보물상자! 🎁</strong>
+        </div>
+    </div>
+</body>
+</html>
