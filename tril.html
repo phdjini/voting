@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>블록체인 트릴레마</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+        
+        .title {
+            text-align: center;
+            font-size: 2.5em;
+            font-weight: bold;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .subtitle {
+            text-align: center;
+            font-size: 1.2em;
+            color: #666;
+            margin-bottom: 40px;
+        }
+        
+        .trilemma-container {
+            display: flex;
+            justify-content: center;
+            margin: 50px 0;
+            position: relative;
+        }
+        
+        .triangle {
+            width: 500px;
+            height: 433px;
+            position: relative;
+        }
+        
+        .triangle-side {
+            position: absolute;
+            height: 3px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            transform-origin: left center;
+        }
+        
+        .side1 {
+            top: 90px;
+            left: 250px;
+            width: 353px;
+            transform: rotate(135deg);
+            transform-origin: 0 0;
+        }
+        
+        .side2 {
+            top: 403px;
+            left: 0px;
+            width: 500px;
+        }
+        
+        .side3 {
+            top: 90px;
+            left: 250px;
+            width: 353px;
+            transform: rotate(45deg);
+            transform-origin: 0 0;
+        }
+        
+        .vertex {
+            position: absolute;
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+            text-align: center;
+            color: white;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+            z-index: 10;
+        }
+        
+        .decentralization {
+            top: -30px;
+            left: 190px;
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+        }
+        
+        .security {
+            top: 343px;
+            left: -60px;
+            background: linear-gradient(135deg, #4834d4, #686de0);
+        }
+        
+        .scalability {
+            top: 343px;
+            left: 440px;
+            background: linear-gradient(135deg, #00d2d3, #54a0ff);
+        }
+        
+        .blockchain-point {
+            position: absolute;
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+            font-size: 12px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            z-index: 20;
+        }
+        
+        .blockchain-point:hover {
+            transform: scale(1.1);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.4);
+        }
+        
+        .bitcoin {
+            top: 180px;
+            left: 80px;
+            background: linear-gradient(135deg, #f39800, #ff6b35);
+        }
+        
+        .ethereum {
+            top: 200px;
+            left: 210px;
+            background: linear-gradient(135deg, #627eea, #4f46e5);
+        }
+        
+        .solana {
+            top: 320px;
+            left: 380px;
+            background: linear-gradient(135deg, #9945ff, #14f195);
+        }
+        
+        .info-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 30px;
+            margin-top: 50px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            border-left: 5px solid;
+            transition: transform 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .bitcoin-card {
+            border-left-color: #f39800;
+        }
+        
+        .ethereum-card {
+            border-left-color: #627eea;
+        }
+        
+        .solana-card {
+            border-left-color: #9945ff;
+        }
+        
+        .card-title {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .card-icon {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+        }
+        
+        .bitcoin-icon {
+            background: linear-gradient(135deg, #f39800, #ff6b35);
+        }
+        
+        .ethereum-icon {
+            background: linear-gradient(135deg, #627eea, #4f46e5);
+        }
+        
+        .solana-icon {
+            background: linear-gradient(135deg, #9945ff, #14f195);
+        }
+        
+        .metric {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .metric:last-child {
+            border-bottom: none;
+        }
+        
+        .metric-label {
+            font-weight: 500;
+            color: #666;
+        }
+        
+        .metric-value {
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .strength {
+            color: #27ae60;
+        }
+        
+        .weakness {
+            color: #e74c3c;
+        }
+        
+        .medium {
+            color: #f39c12;
+        }
+        
+        .legend {
+            margin-top: 30px;
+            text-align: center;
+            font-size: 0.9em;
+            color: #666;
+            line-height: 1.6;
+        }
+        
+        @media (max-width: 768px) {
+            .triangle {
+                width: 300px;
+                height: 260px;
+            }
+            
+            .vertex {
+                width: 80px;
+                height: 80px;
+                font-size: 11px;
+            }
+            
+            .blockchain-point {
+                width: 50px;
+                height: 50px;
+                font-size: 10px;
+            }
+            
+            .side1, .side3 {
+                width: 173px;
+            }
+            
+            .side2 {
+                width: 300px;
+            }
+            
+            .decentralization {
+                top: -40px;
+                left: 110px;
+            }
+            
+            .security {
+                top: 220px;
+                left: -40px;
+            }
+            
+            .scalability {
+                top: 220px;
+                left: 260px;
+            }
+            
+            .bitcoin {
+                top: 90px;
+                left: 50px;
+            }
+            
+            .ethereum {
+                top: 60px;
+                left: 180px;
+            }
+            
+            .solana {
+                top: 170px;
+                left: 210px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="title">블록체인 트릴레마</h1>
+        <p class="subtitle">비탈릭 부테린이 2017년 제시한 블록체인의 근본적 한계</p>
+        
+        <div class="trilemma-container">
+            <div class="triangle">
+                <div class="triangle-side side1"></div>
+                <div class="triangle-side side2"></div>
+                <div class="triangle-side side3"></div>
+                
+                <div class="vertex decentralization">
+                    탈중앙화<br>
+                    (Decentralization)
+                </div>
+                <div class="vertex security">
+                    보안<br>
+                    (Security)
+                </div>
+                <div class="vertex scalability">
+                    확장성<br>
+                    (Scalability)
+                </div>
+                
+                <div class="blockchain-point bitcoin" title="비트코인">BTC</div>
+                <div class="blockchain-point ethereum" title="이더리움">ETH</div>
+                <div class="blockchain-point solana" title="솔라나">SOL</div>
+            </div>
+        </div>
+        
+        <div class="info-cards">
+            <div class="card bitcoin-card">
+                <div class="card-title">
+                    <div class="card-icon bitcoin-icon"></div>
+                    비트코인 (Bitcoin)
+                </div>
+                <div class="metric">
+                    <span class="metric-label">노드 수</span>
+                    <span class="metric-value strength">15,000+</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">보안 수준</span>
+                    <span class="metric-value strength">세계 최고</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">TPS (초당 거래)</span>
+                    <span class="metric-value weakness">7 TPS</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">특징</span>
+                    <span class="metric-value">높은 탈중앙화 + 강력한 보안</span>
+                </div>
+            </div>
+            
+            <div class="card ethereum-card">
+                <div class="card-title">
+                    <div class="card-icon ethereum-icon"></div>
+                    이더리움 (Ethereum)
+                </div>
+                <div class="metric">
+                    <span class="metric-label">검증자 노드</span>
+                    <span class="metric-value strength">8,000+</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">보안 수준</span>
+                    <span class="metric-value medium">검증된 스마트계약</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">TPS (초당 거래)</span>
+                    <span class="metric-value medium">15 TPS</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">문제점</span>
+                    <span class="metric-value weakness">높은 가스비</span>
+                </div>
+            </div>
+            
+            <div class="card solana-card">
+                <div class="card-title">
+                    <div class="card-icon solana-icon"></div>
+                    솔라나 (Solana)
+                </div>
+                <div class="metric">
+                    <span class="metric-label">검증자 요구사양</span>
+                    <span class="metric-value weakness">높은 하드웨어</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">보안 수준</span>
+                    <span class="metric-value weakness">잦은 네트워크 중단</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">TPS (초당 거래)</span>
+                    <span class="metric-value strength">65,000 TPS</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">특징</span>
+                    <span class="metric-value">최고 수준의 확장성</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="legend">
+            <strong>트릴레마 개념:</strong> 탈중앙화, 보안, 확장성 중 최대 2개까지만 동시에 최적화 가능<br>
+            각 블록체인은 서로 다른 조합을 선택하여 고유한 특성을 가짐
+        </div>
+    </div>
+</body>
+</html>
