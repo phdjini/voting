@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>격자 밀도 2배 증가 단계</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #0f0f23, #1a1a2e);
+            color: white;
+            font-family: 'Arial', sans-serif;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .title {
+            text-align: center;
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            color: #f39c12;
+            text-shadow: 0 0 20px rgba(243, 156, 18, 0.5);
+        }
+
+        .subtitle {
+            text-align: center;
+            font-size: 1.2em;
+            margin-bottom: 40px;
+            color: #bdc3c7;
+            font-style: italic;
+        }
+
+        .steps-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .step {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .step:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
+            border-color: #f39c12;
+        }
+
+        .step-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .step-title {
+            font-size: 1.4em;
+            font-weight: bold;
+            color: #3498db;
+        }
+
+        .difficulty-badge {
+            background: linear-gradient(45deg, #e74c3c, #c0392b);
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: bold;
+            box-shadow: 0 0 10px rgba(231, 76, 60, 0.5);
+        }
+
+        .target-area {
+            width: 250px;
+            height: 250px;
+            margin: 20px auto;
+            position: relative;
+            background: radial-gradient(circle, #2c3e50 0%, #34495e 100%);
+            border: 3px solid #7f8c8d;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+        }
+
+        .grid-line {
+            position: absolute;
+            background: #95a5a6;
+            opacity: 0.7;
+        }
+
+        .vertical {
+            width: 1px;
+            height: 100%;
+            top: 0;
+        }
+
+        .horizontal {
+            height: 1px;
+            width: 100%;
+            left: 0;
+        }
+
+        .target-zone {
+            position: absolute;
+            background: radial-gradient(circle, rgba(231, 76, 60, 0.9), rgba(192, 57, 43, 0.6));
+            border: 2px solid #e74c3c;
+            border-radius: 50%;
+            box-shadow: 0 0 15px rgba(231, 76, 60, 0.8);
+            animation: targetPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes targetPulse {
+            0%, 100% { box-shadow: 0 0 15px rgba(231, 76, 60, 0.8); }
+            50% { box-shadow: 0 0 25px rgba(231, 76, 60, 1); }
+        }
+
+        .stats {
+            margin-top: 15px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .stat {
+            background: rgba(52, 73, 94, 0.8);
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #f39c12;
+            margin-bottom: 3px;
+        }
+
+        .stat-label {
+            font-size: 0.8em;
+            color: #bdc3c7;
+        }
+
+        .arrows {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+        }
+
+        .arrow {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            background: #f39c12;
+            border-radius: 50%;
+            box-shadow: 0 0 8px rgba(243, 156, 18, 0.8);
+            animation: arrowFly 3s ease-out infinite;
+        }
+
+        @keyframes arrowFly {
+            0% { opacity: 0; transform: scale(0); }
+            10% { opacity: 1; transform: scale(1); }
+            90% { opacity: 0.8; transform: scale(0.8); }
+            100% { opacity: 0; transform: scale(0.5); }
+        }
+
+        .arrow.hit {
+            background: #27ae60;
+            box-shadow: 0 0 15px rgba(39, 174, 96, 1);
+            animation: arrowHit 2s ease-out infinite;
+        }
+
+        @keyframes arrowHit {
+            0% { opacity: 0; transform: scale(0); }
+            20% { opacity: 1; transform: scale(1.5); }
+            40% { opacity: 1; transform: scale(1.2); }
+            100% { opacity: 0; transform: scale(0.8); }
+        }
+
+        .comparison {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 30px;
+            margin-top: 40px;
+            text-align: center;
+        }
+
+        .comparison-title {
+            font-size: 2em;
+            color: #e74c3c;
+            margin-bottom: 20px;
+            text-shadow: 0 0 15px rgba(231, 76, 60, 0.5);
+        }
+
+        .difficulty-progression {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+
+        .difficulty-step {
+            background: linear-gradient(45deg, #3498db, #2980b9);
+            padding: 15px 25px;
+            border-radius: 25px;
+            font-weight: bold;
+            font-size: 1.2em;
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .difficulty-step:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 25px rgba(52, 152, 219, 0.5);
+        }
+
+        .arrow-icon {
+            font-size: 2em;
+            color: #f39c12;
+            animation: bounce 1s ease-in-out infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateX(0); }
+            50% { transform: translateX(5px); }
+        }
+
+        .explanation {
+            background: rgba(46, 204, 113, 0.1);
+            border-left: 4px solid #2ecc71;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 0 10px 10px 0;
+        }
+
+        .explanation h3 {
+            color: #2ecc71;
+            margin-top: 0;
+        }
+
+        @media (max-width: 768px) {
+            .steps-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .target-area {
+                width: 200px;
+                height: 200px;
+            }
+            
+            .difficulty-progression {
+                flex-direction: column;
+                gap: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="title">🎯 격자 밀도 2배 증가 단계</h1>
+        <p class="subtitle">비트코인 난이도 조정 메커니즘 시각화</p>
+        
+        <div class="steps-container">
+            <div class="step" data-step="1">
+                <div class="step-header">
+                    <div class="step-title">1단계: 2×2 격자</div>
+                    <div class="difficulty-badge">난이도: 1</div>
+                </div>
+                <div class="target-area" id="target1">
+                    <div class="target-zone" style="width: 60px; height: 60px; top: 95px; left: 95px;"></div>
+                    <div class="arrows" id="arrows1"></div>
+                </div>
+                <div class="stats">
+                    <div class="stat">
+                        <div class="stat-value">4</div>
+                        <div class="stat-label">총 격자 수</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value">25%</div>
+                        <div class="stat-label">타겟 비율</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="step" data-step="2">
+                <div class="step-header">
+                    <div class="step-title">2단계: 4×4 격자</div>
+                    <div class="difficulty-badge">난이도: 4</div>
+                </div>
+                <div class="target-area" id="target2">
+                    <div class="target-zone" style="width: 30px; height: 30px; top: 110px; left: 110px;"></div>
+                    <div class="arrows" id="arrows2"></div>
+                </div>
+                <div class="stats">
+                    <div class="stat">
+                        <div class="stat-value">16</div>
+                        <div class="stat-label">총 격자 수</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value">6.25%</div>
+                        <div class="stat-label">타겟 비율</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="step" data-step="3">
+                <div class="step-header">
+                    <div class="step-title">3단계: 8×8 격자</div>
+                    <div class="difficulty-badge">난이도: 16</div>
+                </div>
+                <div class="target-area" id="target3">
+                    <div class="target-zone" style="width: 15px; height: 15px; top: 117px; left: 117px;"></div>
+                    <div class="arrows" id="arrows3"></div>
+                </div>
+                <div class="stats">
+                    <div class="stat">
+                        <div class="stat-value">64</div>
+                        <div class="stat-label">총 격자 수</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value">1.56%</div>
+                        <div class="stat-label">타겟 비율</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="step" data-step="4">
+                <div class="step-header">
+                    <div class="step-title">4단계: 16×16 격자</div>
+                    <div class="difficulty-badge">난이도: 64</div>
+                </div>
+                <div class="target-area" id="target4">
+                    <div class="target-zone" style="width: 8px; height: 8px; top: 121px; left: 121px;"></div>
+                    <div class="arrows" id="arrows4"></div>
+                </div>
+                <div class="stats">
+                    <div class="stat">
+                        <div class="stat-value">256</div>
+                        <div class="stat-label">총 격자 수</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value">0.39%</div>
+                        <div class="stat-label">타겟 비율</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="comparison">
+            <h2 class="comparison-title">📈 난이도 증가 패턴</h2>
+            
+            <div class="difficulty-progression">
+                <div class="difficulty-step">2×2</div>
+                <div class="arrow-icon">→</div>
+                <div class="difficulty-step">4×4</div>
+                <div class="arrow-icon">→</div>
+                <div class="difficulty-step">8×8</div>
+                <div class="arrow-icon">→</div>
+                <div class="difficulty-step">16×16</div>
+            </div>
+
+            <div class="explanation">
+                <h3>🎲 격자 밀도 2배 증가의 의미</h3>
+                <p><strong>격자 수:</strong> 4 → 16 → 64 → 256 (4배씩 증가)</p>
+                <p><strong>타겟 크기:</strong> 점점 작아져서 맞추기 더 어려워짐</p>
+                <p><strong>성공 확률:</strong> 25% → 6.25% → 1.56% → 0.39% (1/4씩 감소)</p>
+                <p><strong>비트코인 비유:</strong> 해시레이트가 증가하면 난이도도 증가하여 블록 시간 유지</p>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-top: 30px;">
+                <div style="background: rgba(231, 76, 60, 0.2); padding: 20px; border-radius: 10px; border-left: 4px solid #e74c3c;">
+                    <h4 style="color: #e74c3c; margin-top: 0;">🔥 해시레이트 증가</h4>
+                    <p>더 많은 채굴자가 참여</p>
+                    <p>초당 더 많은 해시 계산</p>
+                </div>
+                
+                <div style="background: rgba(52, 152, 219, 0.2); padding: 20px; border-radius: 10px; border-left: 4px solid #3498db;">
+                    <h4 style="color: #3498db; margin-top: 0;">⚖️ 자동 조정</h4>
+                    <p>블록이 너무 빨리 나오면</p>
+                    <p>난이도 자동 증가</p>
+                </div>
+                
+                <div style="background: rgba(46, 204, 113, 0.2); padding: 20px; border-radius: 10px; border-left: 4px solid #2ecc71;">
+                    <h4 style="color: #2ecc71; margin-top: 0;">⏰ 시간 유지</h4>
+                    <p>평균 10분 블록 시간</p>
+                    <p>네트워크 안정성 보장</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function createGrid(targetId, gridSize) {
+            const target = document.getElementById(targetId);
+            
+            // 기존 격자선 제거
+            target.querySelectorAll('.grid-line').forEach(line => line.remove());
+            
+            const cellSize = 250 / gridSize;
+            
+            // 세로선 생성 (격자 크기에 관계없이 균등 분할)
+            for (let i = 1; i < gridSize; i++) {
+                const line = document.createElement('div');
+                line.className = 'grid-line vertical';
+                line.style.left = (i * cellSize) + 'px';
+                line.style.background = gridSize === 2 ? '#95a5a6' : '#7f8c8d';
+                line.style.opacity = gridSize === 2 ? '0.9' : '0.7';
+                line.style.width = gridSize === 2 ? '2px' : '1px';
+                target.appendChild(line);
+            }
+            
+            // 가로선 생성 (격자 크기에 관계없이 균등 분할)
+            for (let i = 1; i < gridSize; i++) {
+                const line = document.createElement('div');
+                line.className = 'grid-line horizontal';
+                line.style.top = (i * cellSize) + 'px';
+                line.style.background = gridSize === 2 ? '#95a5a6' : '#7f8c8d';
+                line.style.opacity = gridSize === 2 ? '0.9' : '0.7';
+                line.style.height = gridSize === 2 ? '2px' : '1px';
+                target.appendChild(line);
+            }
+            
+            // 2×2 격자의 경우 외곽선도 강조
+            if (gridSize === 2) {
+                // 왼쪽 경계
+                const leftBorder = document.createElement('div');
+                leftBorder.className = 'grid-line vertical';
+                leftBorder.style.left = '0px';
+                leftBorder.style.background = '#95a5a6';
+                leftBorder.style.opacity = '0.9';
+                leftBorder.style.width = '2px';
+                target.appendChild(leftBorder);
+                
+                // 오른쪽 경계
+                const rightBorder = document.createElement('div');
+                rightBorder.className = 'grid-line vertical';
+                rightBorder.style.left = '249px';
+                rightBorder.style.background = '#95a5a6';
+                rightBorder.style.opacity = '0.9';
+                rightBorder.style.width = '2px';
+                target.appendChild(rightBorder);
+                
+                // 위쪽 경계
+                const topBorder = document.createElement('div');
+                topBorder.className = 'grid-line horizontal';
+                topBorder.style.top = '0px';
+                topBorder.style.background = '#95a5a6';
+                topBorder.style.opacity = '0.9';
+                topBorder.style.height = '2px';
+                target.appendChild(topBorder);
+                
+                // 아래쪽 경계
+                const bottomBorder = document.createElement('div');
+                bottomBorder.className = 'grid-line horizontal';
+                bottomBorder.style.top = '249px';
+                bottomBorder.style.background = '#95a5a6';
+                bottomBorder.style.opacity = '0.9';
+                bottomBorder.style.height = '2px';
+                target.appendChild(bottomBorder);
+            }
+        }
+
+        function shootArrows(arrowsId, targetZone, intensity = 1) {
+            const arrowsContainer = document.getElementById(arrowsId);
+            
+            setInterval(() => {
+                // 무작위 위치에 화살 생성
+                const arrow = document.createElement('div');
+                arrow.className = 'arrow';
+                
+                const x = Math.random() * 240;
+                const y = Math.random() * 240;
+                arrow.style.left = x + 'px';
+                arrow.style.top = y + 'px';
+                
+                // 타겟 존과의 충돌 검사
+                const targetRect = targetZone.getBoundingClientRect();
+                const containerRect = arrowsContainer.getBoundingClientRect();
+                const targetX = targetRect.left - containerRect.left;
+                const targetY = targetRect.top - containerRect.top;
+                const targetSize = parseInt(targetZone.style.width);
+                
+                const hit = (x >= targetX && x <= targetX + targetSize &&
+                            y >= targetY && y <= targetY + targetSize);
+                
+                if (hit) {
+                    arrow.classList.add('hit');
+                }
+                
+                arrowsContainer.appendChild(arrow);
+                
+                // 화살 제거
+                setTimeout(() => arrow.remove(), 3000);
+                
+            }, 1000 / intensity);
+        }
+
+        // 각 단계의 격자 생성
+        createGrid('target1', 2);
+        createGrid('target2', 4);
+        createGrid('target3', 8);
+        createGrid('target4', 16);
+
+        // 화살 애니메이션 시작
+        setTimeout(() => {
+            shootArrows('arrows1', document.querySelector('#target1 .target-zone'), 0.5);
+            shootArrows('arrows2', document.querySelector('#target2 .target-zone'), 0.7);
+            shootArrows('arrows3', document.querySelector('#target3 .target-zone'), 1);
+            shootArrows('arrows4', document.querySelector('#target4 .target-zone'), 1.5);
+        }, 1000);
+
+        // 단계별 호버 효과
+        document.querySelectorAll('.step').forEach(step => {
+            step.addEventListener('mouseenter', () => {
+                const stepNum = step.dataset.step;
+                step.style.borderColor = '#f39c12';
+                step.style.transform = 'translateY(-10px) scale(1.02)';
+            });
+            
+            step.addEventListener('mouseleave', () => {
+                step.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+                step.style.transform = 'translateY(0) scale(1)';
+            });
+        });
+    </script>
+</body>
+</html>
