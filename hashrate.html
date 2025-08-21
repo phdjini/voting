@@ -413,67 +413,35 @@
             // 기존 격자선 제거
             target.querySelectorAll('.grid-line').forEach(line => line.remove());
             
-            const cellSize = 250 / gridSize;
+            const targetSize = 250; // 전체 타겟 크기
             
-            // 세로선 생성 (격자 크기에 관계없이 균등 분할)
+            // 모든 격자 크기에 대해 정확한 균등 분할
             for (let i = 1; i < gridSize; i++) {
-                const line = document.createElement('div');
-                line.className = 'grid-line vertical';
-                line.style.left = (i * cellSize) + 'px';
-                line.style.background = gridSize === 2 ? '#95a5a6' : '#7f8c8d';
-                line.style.opacity = gridSize === 2 ? '0.9' : '0.7';
-                line.style.width = gridSize === 2 ? '2px' : '1px';
-                target.appendChild(line);
-            }
-            
-            // 가로선 생성 (격자 크기에 관계없이 균등 분할)
-            for (let i = 1; i < gridSize; i++) {
-                const line = document.createElement('div');
-                line.className = 'grid-line horizontal';
-                line.style.top = (i * cellSize) + 'px';
-                line.style.background = gridSize === 2 ? '#95a5a6' : '#7f8c8d';
-                line.style.opacity = gridSize === 2 ? '0.9' : '0.7';
-                line.style.height = gridSize === 2 ? '2px' : '1px';
-                target.appendChild(line);
-            }
-            
-            // 2×2 격자의 경우 외곽선도 강조
-            if (gridSize === 2) {
-                // 왼쪽 경계
-                const leftBorder = document.createElement('div');
-                leftBorder.className = 'grid-line vertical';
-                leftBorder.style.left = '0px';
-                leftBorder.style.background = '#95a5a6';
-                leftBorder.style.opacity = '0.9';
-                leftBorder.style.width = '2px';
-                target.appendChild(leftBorder);
+                // 세로선 생성 - 정확한 비율로 분할
+                const verticalLine = document.createElement('div');
+                verticalLine.className = 'grid-line vertical';
+                verticalLine.style.position = 'absolute';
+                verticalLine.style.left = ((i / gridSize) * 100) + '%';
+                verticalLine.style.top = '0';
+                verticalLine.style.width = gridSize === 2 ? '2px' : '1px';
+                verticalLine.style.height = '100%';
+                verticalLine.style.background = gridSize === 2 ? '#95a5a6' : '#7f8c8d';
+                verticalLine.style.opacity = gridSize === 2 ? '0.9' : '0.7';
+                verticalLine.style.transform = 'translateX(-50%)';  // 정확한 중앙 정렬
+                target.appendChild(verticalLine);
                 
-                // 오른쪽 경계
-                const rightBorder = document.createElement('div');
-                rightBorder.className = 'grid-line vertical';
-                rightBorder.style.left = '249px';
-                rightBorder.style.background = '#95a5a6';
-                rightBorder.style.opacity = '0.9';
-                rightBorder.style.width = '2px';
-                target.appendChild(rightBorder);
-                
-                // 위쪽 경계
-                const topBorder = document.createElement('div');
-                topBorder.className = 'grid-line horizontal';
-                topBorder.style.top = '0px';
-                topBorder.style.background = '#95a5a6';
-                topBorder.style.opacity = '0.9';
-                topBorder.style.height = '2px';
-                target.appendChild(topBorder);
-                
-                // 아래쪽 경계
-                const bottomBorder = document.createElement('div');
-                bottomBorder.className = 'grid-line horizontal';
-                bottomBorder.style.top = '249px';
-                bottomBorder.style.background = '#95a5a6';
-                bottomBorder.style.opacity = '0.9';
-                bottomBorder.style.height = '2px';
-                target.appendChild(bottomBorder);
+                // 가로선 생성 - 정확한 비율로 분할
+                const horizontalLine = document.createElement('div');
+                horizontalLine.className = 'grid-line horizontal';
+                horizontalLine.style.position = 'absolute';
+                horizontalLine.style.top = ((i / gridSize) * 100) + '%';
+                horizontalLine.style.left = '0';
+                horizontalLine.style.height = gridSize === 2 ? '2px' : '1px';
+                horizontalLine.style.width = '100%';
+                horizontalLine.style.background = gridSize === 2 ? '#95a5a6' : '#7f8c8d';
+                horizontalLine.style.opacity = gridSize === 2 ? '0.9' : '0.7';
+                horizontalLine.style.transform = 'translateY(-50%)';  // 정확한 중앙 정렬
+                target.appendChild(horizontalLine);
             }
         }
 
