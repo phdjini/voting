@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>블록체인 네트워크 분할 시각화</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #1e1e2e 0%, #2d1b69 100%);
+            color: white;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 28px;
+            background: linear-gradient(45deg, #00d4ff, #5a67d8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .controls {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        button {
+            background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            margin: 0 10px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .phase-indicator {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 20px;
+            font-weight: bold;
+            padding: 15px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .blockchain-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 40px;
+            margin: 40px 0;
+        }
+
+        .network {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            min-height: 80px;
+            opacity: 1;
+            transition: all 0.5s ease;
+        }
+
+        .network.hidden {
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+
+        .network-label {
+            font-weight: bold;
+            font-size: 16px;
+            min-width: 100px;
+            text-align: right;
+            padding: 10px;
+            border-radius: 8px;
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            color: white;
+        }
+
+        .network-b .network-label {
+            background: linear-gradient(45deg, #4834d4, #686de0);
+        }
+
+        .block {
+            width: 60px;
+            height: 60px;
+            border: 3px solid;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+            position: relative;
+            transition: all 0.5s ease;
+            background: linear-gradient(45deg, #00d4ff, #5a67d8);
+            border-color: #00d4ff;
+            box-shadow: 0 4px 15px rgba(0, 212, 255, 0.3);
+        }
+
+        .block.existing {
+            opacity: 0.6;
+            background: linear-gradient(45deg, #95a5a6, #7f8c8d);
+            border-color: #95a5a6;
+            box-shadow: 0 4px 15px rgba(149, 165, 166, 0.2);
+        }
+
+        .block.new-block {
+            animation: blockAppear 0.8s ease;
+            background: linear-gradient(45deg, #00ff88, #00cc6a);
+            border-color: #00ff88;
+            box-shadow: 0 4px 20px rgba(0, 255, 136, 0.4);
+        }
+
+        .block.orphan {
+            background: linear-gradient(45deg, #666, #444);
+            border-color: #666;
+            opacity: 0.4;
+            box-shadow: none;
+            position: relative;
+        }
+
+        .block.orphan::after {
+            content: '❌';
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            font-size: 16px;
+            background: rgba(255, 0, 0, 0.9);
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+        }
+
+        .block.winner {
+            animation: winnerPulse 2s infinite;
+        }
+
+        .partition-line {
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, #ff4757, #ff3838);
+            margin: 20px 0;
+            position: relative;
+            border-radius: 2px;
+            opacity: 0;
+            transform: scaleX(0);
+            transition: all 0.5s ease;
+        }
+
+        .partition-line.active {
+            opacity: 1;
+            transform: scaleX(1);
+            animation: partitionPulse 2s infinite;
+        }
+
+        .partition-line::before {
+            content: '⚡ 네트워크 분할 ⚡';
+            position: absolute;
+            top: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(45deg, #ff4757, #ff3838);
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            white-space: nowrap;
+        }
+
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 40px;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px 15px;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+        }
+
+        .legend-block {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+            border: 2px solid;
+        }
+
+        .legend-existing {
+            background: linear-gradient(45deg, #95a5a6, #7f8c8d);
+            border-color: #95a5a6;
+            opacity: 0.6;
+        }
+
+        .legend-new {
+            background: linear-gradient(45deg, #00ff88, #00cc6a);
+            border-color: #00ff88;
+        }
+
+        .legend-orphan {
+            background: linear-gradient(45deg, #666, #444);
+            border-color: #666;
+            opacity: 0.4;
+        }
+
+        .legend-winner {
+            background: linear-gradient(45deg, #00d4ff, #5a67d8);
+            border-color: #00d4ff;
+            animation: winnerPulse 2s infinite;
+        }
+
+        @keyframes blockAppear {
+            0% {
+                transform: scale(0) rotate(180deg);
+                opacity: 0;
+            }
+            50% {
+                transform: scale(1.2) rotate(0deg);
+            }
+            100% {
+                transform: scale(1) rotate(0deg);
+                opacity: 1;
+            }
+        }
+
+        @keyframes winnerPulse {
+            0%, 100% {
+                box-shadow: 0 4px 15px rgba(0, 212, 255, 0.3);
+                transform: scale(1);
+            }
+            50% {
+                box-shadow: 0 8px 25px rgba(0, 212, 255, 0.6);
+                transform: scale(1.05);
+            }
+        }
+
+        @keyframes partitionPulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.6;
+            }
+        }
+
+        .status-text {
+            text-align: center;
+            margin: 20px 0;
+            font-size: 16px;
+            padding: 15px;
+            border-radius: 10px;
+            background: rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(10px);
+        }
+
+        @media (max-width: 768px) {
+            .network {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .network-label {
+                text-align: center;
+                min-width: auto;
+            }
+            
+            .legend {
+                gap: 15px;
+            }
+            
+            .legend-item {
+                padding: 8px 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔗 블록체인 네트워크 분할 시각화</h1>
+        
+        <div class="controls">
+            <button id="startBtn" onclick="startAnimation()">시작</button>
+            <button id="resumeBtn" onclick="resumeAnimation()" disabled style="display: none;">재개</button>
+            <button id="pauseBtn" onclick="pauseAnimation()" disabled style="display: none;">일시정지</button>
+            <button id="resetBtn" onclick="resetAnimation()">초기화</button>
+        </div>
+
+        <div class="phase-indicator" id="phaseIndicator">
+            🔄 초기 상태: 통합된 네트워크
+        </div>
+
+        <div class="blockchain-container">
+            <div class="network network-a" id="networkA">
+                <div class="network-label">네트워크 A</div>
+                <div class="block existing">1</div>
+                <div class="block existing">2</div>
+                <div class="block existing">3</div>
+            </div>
+
+            <div class="partition-line" id="partitionLine"></div>
+
+            <div class="network network-b hidden" id="networkB">
+                <div class="network-label">네트워크 B</div>
+                <div class="block existing">1</div>
+                <div class="block existing">2</div>
+                <div class="block existing">3</div>
+            </div>
+        </div>
+
+        <div class="status-text" id="statusText">
+            두 네트워크가 통합된 상태입니다. 모든 노드가 같은 블록체인을 공유합니다.
+        </div>
+
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-block legend-existing"></div>
+                <span>기존 블록 (공통 히스토리)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-block legend-new"></div>
+                <span>새로운 블록</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-block legend-orphan"></div>
+                <span>고아 블록 ❌</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-block legend-winner"></div>
+                <span>승리 체인</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentPhase = 0;
+        let animationRunning = false;
+        let animationStarted = false;
+        let isPaused = false;
+
+        const phases = [
+            {
+                title: "🔄 초기 상태: 통합된 네트워크",
+                description: "두 네트워크가 통합된 상태입니다. 모든 노드가 같은 블록체인을 공유합니다."
+            },
+            {
+                title: "⚡ 네트워크 분할 발생",
+                description: "네트워크가 두 부분으로 분할되었습니다. 기존 블록들은 두 네트워크에서 동일하게 유지됩니다."
+            },
+            {
+                title: "🏗️ 독립적 블록 생성 - A 네트워크",
+                description: "네트워크 A가 새로운 블록 4를 생성했습니다. 기존 블록들은 반투명하게 표시됩니다."
+            },
+            {
+                title: "🏗️ 독립적 블록 생성 - B 네트워크",
+                description: "네트워크 B도 독립적으로 새로운 블록 4를 생성했습니다. 두 체인이 분기되었습니다."
+            },
+            {
+                title: "📈 A 네트워크 블록 5 추가",
+                description: "네트워크 A가 블록 5를 추가로 생성했습니다. A 체인이 더 길어졌습니다."
+            },
+            {
+                title: "🔗 네트워크 재통합",
+                description: "네트워크가 재통합되었습니다. 더 긴 체인(A)이 정식 체인이 됩니다."
+            },
+            {
+                title: "🏆 승리 체인 확정",
+                description: "네트워크 A의 체인이 승리했습니다. 네트워크 B의 새로운 블록 4만 고아 블록이 되고, 기존 블록들(1,2,3)은 여전히 유효합니다."
+            },
+            {
+                title: "🚀 새로운 블록 6 생성",
+                description: "재통합 후 새로운 블록 6이 생성됩니다. 더 긴 체인인 네트워크 A의 체인(1→2→3→4→5)에 붙습니다."
+            }
+        ];
+
+        function updatePhase(phase) {
+            const indicator = document.getElementById('phaseIndicator');
+            const statusText = document.getElementById('statusText');
+            
+            indicator.textContent = phases[phase].title;
+            statusText.textContent = phases[phase].description;
+        }
+
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        async function startAnimation() {
+            if (animationRunning || animationStarted) return;
+            
+            animationStarted = true;
+            animationRunning = true;
+            
+            // 버튼 상태 업데이트
+            document.getElementById('startBtn').style.display = 'none';
+            document.getElementById('pauseBtn').style.display = 'inline-block';
+            document.getElementById('pauseBtn').disabled = false;
+            
+            await runAnimation();
+        }
+
+        async function resumeAnimation() {
+            if (animationRunning) return;
+            
+            animationRunning = true;
+            isPaused = false;
+            
+            // 버튼 상태 업데이트
+            document.getElementById('resumeBtn').style.display = 'none';
+            document.getElementById('pauseBtn').style.display = 'inline-block';
+            document.getElementById('pauseBtn').disabled = false;
+            
+            await runAnimation();
+        }
+
+        function pauseAnimation() {
+            if (!animationRunning) return;
+            
+            animationRunning = false;
+            isPaused = true;
+            
+            // 버튼 상태 업데이트
+            document.getElementById('pauseBtn').style.display = 'none';
+            document.getElementById('resumeBtn').style.display = 'inline-block';
+            document.getElementById('resumeBtn').disabled = false;
+        }
+
+        async function runAnimation() {
+            while (animationRunning && currentPhase < phases.length - 1) {
+                await sleep(2000);
+                
+                if (!animationRunning) break; // 일시정지 체크
+                
+                currentPhase++;
+                await executePhase(currentPhase);
+                updatePhase(currentPhase);
+            }
+            
+            // 애니메이션 완료
+            if (currentPhase >= phases.length - 1) {
+                animationRunning = false;
+                document.getElementById('pauseBtn').style.display = 'none';
+                document.getElementById('resumeBtn').style.display = 'none';
+            }
+        }
+
+        async function executePhase(phase) {
+            const networkA = document.getElementById('networkA');
+            const networkB = document.getElementById('networkB');
+            
+            switch(phase) {
+                case 1: // 네트워크 분할
+                    document.getElementById('networkB').classList.remove('hidden');
+                    document.getElementById('partitionLine').classList.add('active');
+                    break;
+                    
+                case 2: // A 네트워크 블록 4 생성
+                    const blockA4 = document.createElement('div');
+                    blockA4.className = 'block new-block';
+                    blockA4.textContent = '4';
+                    networkA.appendChild(blockA4);
+                    break;
+                    
+                case 3: // B 네트워크 블록 4 생성
+                    const blockB4 = document.createElement('div');
+                    blockB4.className = 'block new-block';
+                    blockB4.textContent = '4';
+                    networkB.appendChild(blockB4);
+                    break;
+                    
+                case 4: // A 네트워크 블록 5 생성
+                    const blockA5 = document.createElement('div');
+                    blockA5.className = 'block new-block';
+                    blockA5.textContent = '5';
+                    networkA.appendChild(blockA5);
+                    break;
+                    
+                case 5: // 네트워크 재통합
+                    document.getElementById('partitionLine').classList.remove('active');
+                    break;
+                    
+                case 6: // 승리 체인 확정
+                    // A 체인의 새로운 블록들을 승리 체인으로 표시
+                    const aBlocks = networkA.querySelectorAll('.block');
+                    aBlocks.forEach(block => {
+                        if (!block.classList.contains('existing')) {
+                            block.classList.remove('new-block');
+                            block.classList.add('winner');
+                        }
+                    });
+                    
+                    // B 체인의 새로운 블록만 고아 블록으로 표시
+                    const bNewBlocks = networkB.querySelectorAll('.block:not(.existing)');
+                    bNewBlocks.forEach(block => {
+                        block.classList.remove('new-block');
+                        block.classList.add('orphan');
+                    });
+                    break;
+                    
+                case 7: // 새로운 블록 6 생성
+                    const blockA6 = document.createElement('div');
+                    blockA6.className = 'block new-block';
+                    blockA6.textContent = '6';
+                    networkA.appendChild(blockA6);
+                    
+                    // 잠시 후 블록 6도 승리 체인으로 표시
+                    await sleep(1000);
+                    if (animationRunning) { // 여전히 실행 중인지 확인
+                        blockA6.classList.remove('new-block');
+                        blockA6.classList.add('winner');
+                    }
+                    break;
+            }
+        }
+
+        function resetAnimation() {
+            if (animationRunning) return;
+            
+            // 상태 초기화
+            currentPhase = 0;
+            animationStarted = false;
+            isPaused = false;
+            updatePhase(currentPhase);
+            
+            // 버튼 상태 초기화
+            document.getElementById('startBtn').style.display = 'inline-block';
+            document.getElementById('resumeBtn').style.display = 'none';
+            document.getElementById('pauseBtn').style.display = 'none';
+            document.getElementById('startBtn').disabled = false;
+            
+            // 네트워크 B 숨기기
+            document.getElementById('networkB').classList.add('hidden');
+            document.getElementById('partitionLine').classList.remove('active');
+            
+            // 추가된 블록들 제거
+            const networkA = document.getElementById('networkA');
+            const networkB = document.getElementById('networkB');
+            
+            // A 네트워크에서 블록 4, 5, 6 제거
+            const aExtraBlocks = networkA.querySelectorAll('.block:nth-child(n+5)');
+            aExtraBlocks.forEach(block => block.remove());
+            
+            // B 네트워크에서 블록 4 제거
+            const bExtraBlocks = networkB.querySelectorAll('.block:nth-child(n+5)');
+            bExtraBlocks.forEach(block => block.remove());
+            
+            // 모든 블록 클래스 초기화
+            document.querySelectorAll('.block').forEach(block => {
+                block.className = 'block existing';
+            });
+        }
+
+        // 초기 상태 설정
+        updatePhase(0);
+    </script>
+</body>
+</html>
