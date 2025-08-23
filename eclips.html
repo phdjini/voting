@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eclipse Attack Visualization</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #0c0c0c 0%, #1a1a2e 50%, #16213e 100%);
+            font-family: 'Arial', sans-serif;
+            color: white;
+            overflow-x: hidden;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            text-align: center;
+        }
+        
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+        
+        .subtitle {
+            font-size: 1.2em;
+            margin-bottom: 30px;
+            opacity: 0.8;
+        }
+        
+        #network-container {
+            position: relative;
+            width: 800px;
+            height: 600px;
+            margin: 20px auto;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            overflow: hidden;
+        }
+        
+        .node {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            border: 2px solid;
+            cursor: pointer;
+            z-index: 10;
+        }
+        
+        .honest-node {
+            background: linear-gradient(45deg, #4ecdc4, #44a08d);
+            border-color: #4ecdc4;
+            color: white;
+            box-shadow: 0 0 15px rgba(78, 205, 196, 0.5);
+        }
+        
+        .target-node {
+            background: linear-gradient(45deg, #ffd93d, #ff6b6b);
+            border-color: #ffd93d;
+            color: black;
+            font-size: 14px;
+            width: 50px;
+            height: 50px;
+            box-shadow: 0 0 25px rgba(255, 217, 61, 0.7);
+        }
+        
+        .malicious-node {
+            background: linear-gradient(45deg, #e74c3c, #c0392b);
+            border-color: #e74c3c;
+            color: white;
+            box-shadow: 0 0 15px rgba(231, 76, 60, 0.5);
+        }
+        
+        .connection {
+            position: absolute;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #4ecdc4, transparent);
+            transform-origin: left center;
+            opacity: 0.6;
+            z-index: 1;
+            animation: pulse 2s infinite;
+        }
+        
+        .malicious-connection {
+            background: linear-gradient(90deg, transparent, #e74c3c, transparent);
+            animation: malicious-pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 1; }
+        }
+        
+        @keyframes malicious-pulse {
+            0%, 100% { opacity: 0.8; }
+            50% { opacity: 1; box-shadow: 0 0 10px rgba(231, 76, 60, 0.8); }
+        }
+        
+        .controls {
+            margin: 30px 0;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            margin: 0 10px;
+            border: none;
+            border-radius: 25px;
+            background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .status {
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(5px);
+        }
+        
+        .phase {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        .description {
+            font-size: 1.1em;
+            opacity: 0.9;
+            line-height: 1.4;
+        }
+        
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .legend-node {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 2px solid;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Eclipse 공격 (Eclipse Attack)</h1>
+        <p class="subtitle">블록체인 네트워크에서의 노드 고립 공격 시각화</p>
+        
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-node honest-node"></div>
+                <span>정상 노드</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-node target-node"></div>
+                <span>목표 노드</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-node malicious-node"></div>
+                <span>악성 노드</span>
+            </div>
+        </div>
+        
+        <div id="network-container"></div>
+        
+        <div class="controls">
+            <button class="btn" onclick="startAttack()">공격 시작</button>
+            <button class="btn" onclick="resetNetwork()">네트워크 초기화</button>
+            <button class="btn" onclick="showDefense()">방어 방법</button>
+        </div>
+        
+        <div class="status">
+            <div class="phase" id="phase">단계 1: 정상 네트워크</div>
+            <div class="description" id="description">모든 노드가 자유롭게 연결되어 정보를 교환하고 있습니다.</div>
+        </div>
+    </div>
+
+    <script>
+        const container = document.getElementById('network-container');
+        const phaseElement = document.getElementById('phase');
+        const descriptionElement = document.getElementById('description');
+        
+        let nodes = [];
+        let connections = [];
+        let currentPhase = 1;
+        let isAttacking = false;
+        
+        // 노드 위치 생성
+        function generateNodePositions() {
+            const positions = [];
+            const centerX = 400;
+            const centerY = 300;
+            
+            // 목표 노드 (중앙)
+            positions.push({ x: centerX, y: centerY, type: 'target' });
+            
+            // 정상 노드들 (원형 배치)
+            for (let i = 0; i < 8; i++) {
+                const angle = (i / 8) * 2 * Math.PI;
+                const radius = 200;
+                positions.push({
+                    x: centerX + Math.cos(angle) * radius,
+                    y: centerY + Math.sin(angle) * radius,
+                    type: 'honest'
+                });
+            }
+            
+            // 악성 노드들 (처음에는 숨김)
+            for (let i = 0; i < 6; i++) {
+                const angle = (i / 6) * 2 * Math.PI;
+                const radius = 120;
+                positions.push({
+                    x: centerX + Math.cos(angle) * radius,
+                    y: centerY + Math.sin(angle) * radius,
+                    type: 'malicious',
+                    hidden: true
+                });
+            }
+            
+            return positions;
+        }
+        
+        // 노드 생성
+        function createNode(x, y, type, index) {
+            const node = document.createElement('div');
+            node.className = `node ${type}-node`;
+            node.style.left = (x - 20) + 'px';
+            node.style.top = (y - 20) + 'px';
+            
+            if (type === 'target') {
+                node.textContent = 'T';
+                node.title = '목표 노드';
+            } else if (type === 'honest') {
+                node.textContent = 'H' + index;
+                node.title = '정상 노드 ' + index;
+            } else {
+                node.textContent = 'M' + index;
+                node.title = '악성 노드 ' + index;
+                if (nodes.length > 9) node.style.display = 'none';
+            }
+            
+            container.appendChild(node);
+            return { element: node, x, y, type, index };
+        }
+        
+        // 연결선 생성
+        function createConnection(node1, node2, isMalicious = false) {
+            const connection = document.createElement('div');
+            connection.className = isMalicious ? 'connection malicious-connection' : 'connection';
+            
+            const dx = node2.x - node1.x;
+            const dy = node2.y - node1.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            const angle = Math.atan2(dy, dx);
+            
+            connection.style.width = distance + 'px';
+            connection.style.left = node1.x + 'px';
+            connection.style.top = node1.y + 'px';
+            connection.style.transform = `rotate(${angle}rad)`;
+            
+            container.appendChild(connection);
+            return { element: connection, node1, node2, isMalicious };
+        }
+        
+        // 네트워크 초기화
+        function initNetwork() {
+            container.innerHTML = '';
+            nodes = [];
+            connections = [];
+            
+            const positions = generateNodePositions();
+            
+            // 노드 생성
+            positions.forEach((pos, index) => {
+                if (pos.type === 'honest') {
+                    nodes.push(createNode(pos.x, pos.y, pos.type, index));
+                } else if (pos.type === 'malicious') {
+                    nodes.push(createNode(pos.x, pos.y, pos.type, index - 8));
+                } else {
+                    nodes.push(createNode(pos.x, pos.y, pos.type, 0));
+                }
+            });
+            
+            // 초기 연결 (목표 노드와 정상 노드들)
+            const targetNode = nodes[0];
+            for (let i = 1; i <= 8; i++) {
+                connections.push(createConnection(targetNode, nodes[i]));
+            }
+            
+            // 정상 노드들 간 일부 연결
+            for (let i = 1; i <= 8; i++) {
+                const nextIndex = (i % 8) + 1;
+                connections.push(createConnection(nodes[i], nodes[nextIndex]));
+            }
+        }
+        
+        // 공격 시작
+        function startAttack() {
+            if (isAttacking) return;
+            isAttacking = true;
+            
+            // 단계 2: 악성 노드 등장
+            setTimeout(() => {
+                currentPhase = 2;
+                updateStatus('단계 2: 악성 노드 침투', '공격자가 네트워크에 악성 노드들을 투입합니다.');
+                
+                // 악성 노드들 표시
+                for (let i = 9; i < nodes.length; i++) {
+                    nodes[i].element.style.display = 'block';
+                    nodes[i].element.style.animation = 'fadeIn 0.5s ease';
+                }
+            }, 1000);
+            
+            // 단계 3: 연결 차단 시작
+            setTimeout(() => {
+                currentPhase = 3;
+                updateStatus('단계 3: 연결 차단', '악성 노드들이 목표 노드와 정상 노드들 사이의 연결을 차단합니다.');
+                
+                // 정상 연결들 제거
+                connections.forEach(conn => {
+                    if (!conn.isMalicious && (conn.node1.type === 'target' || conn.node2.type === 'target')) {
+                        conn.element.style.opacity = '0.2';
+                        conn.element.style.animation = 'none';
+                    }
+                });
+            }, 3000);
+            
+            // 단계 4: Eclipse 완성
+            setTimeout(() => {
+                currentPhase = 4;
+                updateStatus('단계 4: Eclipse 공격 완성', '목표 노드가 완전히 고립되어 악성 노드들로만 둘러싸였습니다.');
+                
+                // 정상 연결 완전 제거
+                connections = connections.filter(conn => {
+                    if (!conn.isMalicious && (conn.node1.type === 'target' || conn.node2.type === 'target')) {
+                        conn.element.remove();
+                        return false;
+                    }
+                    return true;
+                });
+                
+                // 악성 연결 생성
+                const targetNode = nodes[0];
+                for (let i = 9; i < nodes.length; i++) {
+                    connections.push(createConnection(targetNode, nodes[i], true));
+                }
+            }, 5000);
+            
+            // 단계 5: 공격 효과
+            setTimeout(() => {
+                currentPhase = 5;
+                updateStatus('단계 5: 공격 효과', '목표 노드는 이제 조작된 정보만 받게 되며, 이중 지불 등의 공격에 취약해집니다.');
+                
+                // 목표 노드 색상 변경 (위험 상태)
+                const targetNode = nodes[0];
+                targetNode.element.style.background = 'linear-gradient(45deg, #ff4757, #ff3838)';
+                targetNode.element.style.boxShadow = '0 0 25px rgba(255, 71, 87, 0.7)';
+                targetNode.element.style.animation = 'warning 1s infinite alternate';
+                
+                // CSS 애니메이션 추가
+                const style = document.createElement('style');
+                style.textContent = `
+                    @keyframes warning {
+                        from { transform: scale(1); }
+                        to { transform: scale(1.1); }
+                    }
+                    @keyframes fadeIn {
+                        from { opacity: 0; transform: scale(0); }
+                        to { opacity: 1; transform: scale(1); }
+                    }
+                `;
+                document.head.appendChild(style);
+            }, 7000);
+        }
+        
+        // 네트워크 초기화
+        function resetNetwork() {
+            isAttacking = false;
+            currentPhase = 1;
+            updateStatus('단계 1: 정상 네트워크', '모든 노드가 자유롭게 연결되어 정보를 교환하고 있습니다.');
+            initNetwork();
+        }
+        
+        // 방어 방법 표시
+        function showDefense() {
+            updateStatus('방어 방법', 
+                '1. 다양한 연결 경로 확보<br>' +
+                '2. 연결 노드 검증 및 신뢰성 확인<br>' +
+                '3. 타임스탬프 검증으로 정보의 신선도 확인<br>' +
+                '4. 체크포인트 시스템으로 주기적 동기화<br>' +
+                '5. 연결 수 제한 및 다양성 확보'
+            );
+        }
+        
+        // 상태 업데이트
+        function updateStatus(phase, description) {
+            phaseElement.textContent = phase;
+            descriptionElement.innerHTML = description;
+        }
+        
+        // 초기화
+        initNetwork();
+        
+        // 노드 호버 효과
+        container.addEventListener('mouseover', (e) => {
+            if (e.target.classList.contains('node')) {
+                e.target.style.transform = 'scale(1.2)';
+            }
+        });
+        
+        container.addEventListener('mouseout', (e) => {
+            if (e.target.classList.contains('node')) {
+                e.target.style.transform = 'scale(1)';
+            }
+        });
+    </script>
+</body>
+</html>
