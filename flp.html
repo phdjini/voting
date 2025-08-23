@@ -1,0 +1,1078 @@
+<div class="scenario-card">
+            <h3>상황: 중국집에서 10명이 15초 내에 하나의 메뉴로 합의해야 합니다</h3>
+            <div class="menu-options">
+                <div class="menu-option" id="menu-jjajang">🍜 짜장면</div>
+                <div class="menu-option" id="menu-jjamppong">🍲 짬뽕</div>
+                <div class="menu-option" id="menu-bokkeumbap">🍚 볶음밥</div>
+                <div class="menu-option" id="menu-tangsuyuk">🍤 탕수육</div>
+            </div>
+            <p><strong>제한 조건:</strong> ⏰ 15초 시간 제한 | 🔧 10명 중 랜덤하게 1명 장애 발생 | 📨 나머지 9명은 모두 찬성 (반대 없음)</p>
+            <p><strong>합의 과정:</strong> 1) 누군가 메뉴를 제안 → 2) 모든 사람에게 메시지 전송 → 3) 찬성 투표만 (반대 없<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FLP 정리: 중국집 메뉴 합의</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 28px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .scenario-card {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(15px);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .menu-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .menu-option {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 15px;
+            border-radius: 15px;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .menu-option:hover {
+            transform: scale(1.05);
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .current-proposal {
+            background: rgba(255, 193, 7, 0.4);
+            border: 3px solid #FFD700;
+            animation: proposal-highlight 2s infinite;
+        }
+
+        @keyframes proposal-highlight {
+            0%, 100% { box-shadow: 0 0 10px rgba(255, 215, 0, 0.5); }
+            50% { box-shadow: 0 0 20px rgba(255, 215, 0, 0.8); }
+        }
+
+        .controls {
+            text-align: center;
+            margin: 30px 0;
+        }
+
+        .control-btn {
+            background: linear-gradient(45deg, #00d4ff, #5a67d8);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            margin: 0 10px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .control-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 212, 255, 0.4);
+        }
+
+        .control-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .proposal-section {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 25px;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .proposer-info {
+            font-size: 18px;
+            margin-bottom: 15px;
+            color: #FFD700;
+        }
+
+        .current-proposal-display {
+            font-size: 24px;
+            font-weight: bold;
+            background: rgba(255, 193, 7, 0.3);
+            padding: 15px 25px;
+            border-radius: 15px;
+            margin: 15px 0;
+        }
+
+        .simulation-area {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 30px;
+            margin: 30px 0;
+            min-height: 600px;
+            position: relative;
+        }
+
+        .people-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            grid-template-rows: repeat(2, 1fr);
+            gap: 20px;
+            height: 400px;
+            margin-bottom: 30px;
+        }
+
+        .person {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 15px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.5s ease;
+            position: relative;
+        }
+
+        .person-avatar {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            margin-bottom: 10px;
+        }
+
+        .person-name {
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .person-status {
+            font-size: 11px;
+            opacity: 0.8;
+            text-align: center;
+            min-height: 20px;
+        }
+
+        .person-vote {
+            margin-top: 8px;
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+
+        .vote-agree {
+            background: rgba(0, 255, 136, 0.7);
+            color: #333;
+        }
+
+        .vote-disagree {
+            background: rgba(255, 107, 107, 0.7);
+            color: white;
+        }
+
+        .person.proposer {
+            border: 3px solid #FFD700;
+            background: rgba(255, 215, 0, 0.2);
+        }
+
+        .person.proposer .person-avatar {
+            background: linear-gradient(45deg, #FFD700, #FFA500);
+        }
+
+        .person.thinking {
+            animation: thinking-pulse 2s infinite;
+        }
+
+        .person.failed {
+            background: rgba(255, 107, 107, 0.3);
+            border: 2px solid #ff6b6b;
+        }
+
+        .person.failed .person-avatar {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            animation: error-shake 1s infinite;
+        }
+
+        @keyframes thinking-pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        @keyframes error-shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-2px); }
+            75% { transform: translateX(2px); }
+        }
+
+        .message-lines {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .message-line {
+            position: absolute;
+            height: 2px;
+            background: linear-gradient(90deg, #00d4ff, transparent);
+            opacity: 0;
+            animation: message-flow 2s ease-in-out;
+        }
+
+        @keyframes message-flow {
+            0% { opacity: 0; width: 0; }
+            50% { opacity: 1; width: 150px; }
+            100% { opacity: 0; width: 150px; }
+        }
+
+        .message-bubble {
+            position: absolute;
+            background: rgba(0, 212, 255, 0.9);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 10px;
+            font-weight: bold;
+            opacity: 0;
+            animation: message-bubble 3s ease-in-out;
+            z-index: 20;
+        }
+
+        @keyframes message-bubble {
+            0% { opacity: 0; transform: scale(0); }
+            30% { opacity: 1; transform: scale(1); }
+            70% { opacity: 1; transform: scale(1); }
+            100% { opacity: 0; transform: scale(0); }
+        }
+
+        .status-panel {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .status-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .timer {
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            color: #FFD700;
+            margin: 20px 0;
+        }
+
+        .consensus-bar {
+            width: 100%;
+            height: 30px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 15px;
+            margin: 15px 0;
+            overflow: hidden;
+            display: flex;
+        }
+
+        .agree-bar {
+            background: linear-gradient(45deg, #00ff88, #00cc6a);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+            color: white;
+            transition: width 0.5s ease;
+        }
+
+        .disagree-bar {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+            color: white;
+            transition: width 0.5s ease;
+        }
+
+        .phase-indicator {
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            margin: 20px 0;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+
+        .final-result {
+            text-align: center;
+            font-size: 20px;
+            font-weight: bold;
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px 0;
+            display: none;
+        }
+
+        .result-success {
+            background: rgba(0, 255, 136, 0.2);
+            color: #00ff88;
+        }
+
+        .result-timeout {
+            background: rgba(255, 107, 107, 0.2);
+            color: #ff6b6b;
+        }
+
+        .result-failed {
+            background: rgba(255, 193, 7, 0.2);
+            color: #FFD700;
+        }
+
+        .explanation-card {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            border-left: 4px solid #FFD700;
+        }
+
+        .voting-process {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+
+        @media (max-width: 768px) {
+            .people-grid {
+                grid-template-columns: repeat(3, 1fr);
+                grid-template-rows: repeat(4, 1fr);
+                gap: 15px;
+            }
+            
+            .menu-options {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🥢 FLP 정리: 중국집 메뉴 합의 과정</h1>
+
+        <div class="scenario-card">
+            <h3>상황: 중국집에서 10명이 15초 내에 하나의 메뉴로 합의해야 합니다</h3>
+            <div class="menu-options">
+                <div class="menu-option" id="menu-jjajang">🍜 짜장면</div>
+                <div class="menu-option" id="menu-jjamppong">🍲 짬뽕</div>
+                <div class="menu-option" id="menu-bokkeumbap">🍚 볶음밥</div>
+                <div class="menu-option" id="menu-tangsuyuk">🍤 탕수육</div>
+            </div>
+            <p><strong>제한 조건:</strong> ⏰ 15초 시간 제한 | 🔧 매 라운드마다 랜덤하게 1명 장애 | 🎲 랜덤 투표 결과</p>
+            <p><strong>가능한 시나리오:</strong> 일부 찬성+반대+무응답 | 또는 9명 전체 찬성+1명 장애 | 기타 다양한 조합</p>
+            <p><strong>합의 조건:</strong> 장애를 제외한 모든 사람이 찬성해야 합의 성공</p>
+        </div>
+
+        <div class="proposal-section" id="proposalSection" style="display: none;">
+            <div class="proposer-info" id="proposerInfo">
+                <!-- 제안자 정보가 여기 표시됩니다 -->
+            </div>
+            <div class="current-proposal-display" id="currentProposal">
+                <!-- 현재 제안이 여기 표시됩니다 -->
+            </div>
+        </div>
+
+        <div class="controls">
+            <button class="control-btn" id="startBtn" onclick="startSimulation()">합의 과정 시작</button>
+            <button class="control-btn" id="resetBtn" onclick="resetSimulation()">초기화</button>
+            <button class="control-btn" id="nextRoundBtn" onclick="nextRound()" style="display: none;">다음 라운드</button>
+        </div>
+
+        <div class="phase-indicator" id="phaseIndicator">
+            💭 대기 상태: 누군가 메뉴를 제안할 때까지 기다리고 있습니다
+        </div>
+
+        <div class="timer" id="timer">⏰ 제한시간: 15초 | 경과 시간: 00:00</div>
+
+        <div class="simulation-area">
+            <div class="message-lines" id="messageLines"></div>
+            <div class="people-grid" id="peopleGrid">
+                <!-- 사람들이 동적으로 생성됩니다 -->
+            </div>
+
+            <div class="consensus-bar">
+                <div class="agree-bar" id="agreeBar" style="width: 0%;">찬성 0</div>
+                <div class="disagree-bar" id="disagreeBar" style="width: 0%;">반대 0</div>
+            </div>
+
+            <div class="status-panel">
+                <div class="status-row">
+                    <span>현재 제안:</span>
+                    <span id="currentProposalStatus">없음</span>
+                </div>
+                <div class="status-row">
+                    <span>찬성:</span>
+                    <span id="agreeCount">0명</span>
+                </div>
+                <div class="status-row">
+                    <span>반대:</span>
+                    <span id="disagreeCount">0명</span>
+                </div>
+                <div class="status-row">
+                    <span>응답 대기:</span>
+                    <span id="waitingCount">10명</span>
+                </div>
+                <div class="status-row">
+                    <span>장애 발생:</span>
+                    <span id="failedCount">0명</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="final-result" id="finalResult">
+            <!-- 결과가 여기에 표시됩니다 -->
+        </div>
+
+        <div class="explanation-card">
+            <h4>🎯 FLP 정리와 메뉴 합의</h4>
+            <div class="voting-process">
+                <h5>📋 합의 과정:</h5>
+                <p><strong>1단계:</strong> 제안자가 메뉴 제안 (예: "짜장면 어때요?")</p>
+                <p><strong>2단계:</strong> 모든 참가자에게 메시지 전송</p>
+                <p><strong>3단계:</strong> 각자 찬반 의견을 메시지로 응답</p>
+                <p><strong>4단계:</strong> 전체 찬성 시 합의 완료, 아니면 다른 메뉴 제안</p>
+            </div>
+            <p><strong>FLP 문제:</strong> 일부가 응답하지 않거나 반대하면 언제까지 기다려야 할지 결정할 수 없습니다.</p>
+            <p><strong>현실적 딜레마:</strong> "찬성 6명, 반대 2명, 무응답 1명... 15초가 지났는데 어떻게 결정하죠?"</p>
+            <p><strong>해결책:</strong> 실제 블록체인들은 타임아웃, 확률적 방법, 2/3 다수결 등을 사용합니다.</p>
+        </div>
+    </div>
+
+    <script>
+        let people = [];
+        let simulationRunning = false;
+        let startTime = 0;
+        let timerInterval = null;
+        let phase = 'ready';
+        let currentProposal = null;
+        let proposerIndex = 0;
+        let round = 1;
+
+        const names = ['알리스', '밥', '찰리', '다이안', '이브', '프랭크', '그레이스', '헨리', '아이비', '잭'];
+        const menuItems = [
+            {id: 'jjajang', name: '짜장면', emoji: '🍜'},
+            {id: 'jjamppong', name: '짬뽕', emoji: '🍲'},
+            {id: 'bokkeumbap', name: '볶음밥', emoji: '🍚'},
+            {id: 'tangsuyuk', name: '탕수육', emoji: '🍤'}
+        ];
+
+        const phases = {
+            ready: '💭 대기 상태: 누군가 메뉴를 제안할 때까지 기다리고 있습니다',
+            proposing: '📢 제안 중: 메뉴가 제안되어 모든 참가자에게 메시지를 전송하고 있습니다',
+            voting: '🗳️ 투표 중: 각자 제안된 메뉴에 대해 찬반 의견을 보내고 있습니다',
+            waiting: '⏳ 응답 대기: 일부가 응답하지 않아 합의를 진행할 수 없습니다',
+            consensus_success: '✅ 합의 성공: 모든 참가자가 동일한 메뉴에 동의했습니다',
+            consensus_failed: '❌ 합의 실패: 반대 의견으로 인해 다른 메뉴를 제안해야 합니다',
+            timeout: '⏰ 시간 초과: 정해진 시간 내에 모든 응답을 받지 못했습니다'
+        };
+
+        function initializePeople() {
+            const grid = document.getElementById('peopleGrid');
+            grid.innerHTML = '';
+            people = [];
+
+            // 매 라운드마다 새로운 랜덤 장애 노드 선택
+            const failedNodeIndex = Math.floor(Math.random() * 10);
+
+            // 시나리오 타입 랜덤 결정
+            const scenarioType = Math.random();
+            let scenario;
+            
+            if (scenarioType < 0.3) {
+                scenario = 'unanimous'; // 30% 확률: 9명 전체 찬성
+            } else if (scenarioType < 0.6) {
+                scenario = 'mixed_responses'; // 30% 확률: 일부 찬성+반대+무응답
+            } else {
+                scenario = 'split_vote'; // 40% 확률: 찬성+반대 혼재
+            }
+
+            for (let i = 0; i < 10; i++) {
+                const person = {
+                    id: i,
+                    name: names[i],
+                    vote: null,
+                    status: 'waiting',
+                    responseTime: Math.random() * 12000 + 1000, // 1-13초
+                    failed: i === failedNodeIndex,
+                    preference: menuItems[Math.floor(Math.random() * menuItems.length)].id,
+                    scenario: scenario,
+                    willRespond: true,
+                    voteDecision: 'agree' // 기본값
+                };
+
+                // 장애 노드는 응답하지 않음
+                if (person.failed) {
+                    person.responseTime = Infinity;
+                    person.willRespond = false;
+                }
+
+                // 시나리오별 투표 행동 결정
+                if (!person.failed) {
+                    switch (scenario) {
+                        case 'unanimous':
+                            // 모든 정상 노드가 찬성
+                            person.voteDecision = 'agree';
+                            person.willRespond = true;
+                            break;
+                            
+                        case 'mixed_responses':
+                            // 일부는 찬성, 일부는 반대, 일부는 늦은 응답 (15초 초과)
+                            const behavior = Math.random();
+                            if (behavior < 0.4) {
+                                person.voteDecision = 'agree';
+                                person.willRespond = true;
+                            } else if (behavior < 0.7) {
+                                person.voteDecision = 'disagree';
+                                person.willRespond = true;
+                            } else {
+                                // 늦은 응답 (15초 후에 응답하려고 시도)
+                                person.voteDecision = 'agree';
+                                person.willRespond = true;
+                                person.responseTime = 16000 + Math.random() * 5000; // 16-21초
+                            }
+                            break;
+                            
+                        case 'split_vote':
+                            // 명확한 찬성/반대 분할
+                            person.voteDecision = Math.random() < 0.6 ? 'agree' : 'disagree';
+                            person.willRespond = true;
+                            break;
+                    }
+                }
+
+                people.push(person);
+
+                const personDiv = document.createElement('div');
+                personDiv.className = 'person';
+                personDiv.id = `person-${i}`;
+                
+                let statusText = '대기 중';
+                if (person.failed) {
+                    statusText = '장애 예정 🔧';
+                } else if (person.responseTime > 15000) {
+                    statusText = '늦은 응답 예정 ⏰';
+                }
+                
+                personDiv.innerHTML = `
+                    <div class="person-avatar">${i + 1}</div>
+                    <div class="person-name">${person.name}</div>
+                    <div class="person-status">${statusText}</div>
+                `;
+                
+                // 장애 노드 미리 표시
+                if (person.failed) {
+                    personDiv.style.opacity = '0.6';
+                    personDiv.style.border = '2px dashed #ff6b6b';
+                } else if (person.responseTime > 15000) {
+                    personDiv.style.opacity = '0.8';
+                    personDiv.style.border = '2px dashed #ffa726';
+                }
+                
+                grid.appendChild(personDiv);
+            }
+
+            // 시나리오 정보 표시
+            updateScenarioInfo(scenario);
+        }
+
+        function updateScenarioInfo(scenario) {
+            const scenarioNames = {
+                'unanimous': '🎯 시나리오: 전체 찬성 (9명 찬성 + 1명 장애)',
+                'mixed_responses': '🎲 시나리오: 혼합 응답 (찬성/반대/늦은응답/장애)',
+                'split_vote': '⚖️ 시나리오: 분할 투표 (찬성 vs 반대 + 1명 장애)'
+            };
+            
+            let scenarioDiv = document.getElementById('scenarioInfo');
+            if (!scenarioDiv) {
+                scenarioDiv = document.createElement('div');
+                scenarioDiv.id = 'scenarioInfo';
+                scenarioDiv.style.cssText = `
+                    text-align: center;
+                    font-size: 16px;
+                    font-weight: bold;
+                    color: #FFD700;
+                    background: rgba(255, 215, 0, 0.1);
+                    padding: 10px;
+                    border-radius: 8px;
+                    margin: 15px 0;
+                `;
+                document.querySelector('.simulation-area').insertBefore(scenarioDiv, document.getElementById('peopleGrid'));
+            }
+            
+            scenarioDiv.textContent = scenarioNames[scenario];
+        }
+
+        function startSimulation() {
+            if (simulationRunning) return;
+            
+            simulationRunning = true;
+            startTime = Date.now();
+            phase = 'proposing';
+            
+            document.getElementById('startBtn').disabled = true;
+            document.getElementById('proposalSection').style.display = 'block';
+            
+            startTimer();
+            makeProposal();
+        }
+
+        function makeProposal() {
+            // 제안자 선택 (장애가 없는 사람 중에서)
+            const healthyPeople = people.filter(p => !p.failed);
+            const proposer = healthyPeople[proposerIndex % healthyPeople.length];
+            
+            // 제안할 메뉴 선택 (제안자의 선호도 기반)
+            currentProposal = menuItems.find(item => item.id === proposer.preference) || menuItems[0];
+            
+            // 제안자 표시
+            document.getElementById(`person-${proposer.id}`).classList.add('proposer');
+            
+            // 제안 정보 업데이트
+            document.getElementById('proposerInfo').textContent = 
+                `${proposer.name}님이 메뉴를 제안합니다 (라운드 ${round})`;
+            document.getElementById('currentProposal').textContent = 
+                `${currentProposal.emoji} ${currentProposal.name}`;
+            document.getElementById('currentProposalStatus').textContent = 
+                `${currentProposal.name}`;
+            
+            // 메뉴 옵션 하이라이트
+            document.querySelectorAll('.menu-option').forEach(option => {
+                option.classList.remove('current-proposal');
+            });
+            document.getElementById(`menu-${currentProposal.id}`).classList.add('current-proposal');
+            
+            updatePhaseIndicator();
+            
+            // 메시지 전송 시뮬레이션
+            setTimeout(() => {
+                phase = 'voting';
+                updatePhaseIndicator();
+                startVoting();
+            }, 2000);
+        }
+
+        function startVoting() {
+            // 각 사람의 투표 시작 (장애 노드 제외)
+            people.forEach((person, index) => {
+                if (!person.failed && index !== people.findIndex((p, i) => document.getElementById(`person-${i}`).classList.contains('proposer'))) {
+                    setTimeout(() => {
+                        if (simulationRunning && phase === 'voting') {
+                            castVote(person);
+                        }
+                    }, person.responseTime);
+                } else if (person.failed) {
+                    // 장애 노드는 즉시 표시
+                    setTimeout(() => {
+                        showFailedNode(person);
+                    }, 1000);
+                }
+            });
+
+            // 제안자는 자동으로 찬성
+            const proposerIndex = people.findIndex((p, i) => document.getElementById(`person-${i}`).classList.contains('proposer'));
+            if (proposerIndex !== -1) {
+                const proposer = people[proposerIndex];
+                setTimeout(() => {
+                    proposer.vote = 'agree';
+                    proposer.status = 'voted';
+                    updatePersonDisplay(proposer);
+                    updateStatus();
+                }, 500);
+            }
+
+            // 메시지 교환 애니메이션
+            startMessageAnimation();
+            
+            // 15초 후 강제 종료 (시간 제한)
+            setTimeout(() => {
+                if (simulationRunning) {
+                    timeoutSimulation();
+                }
+            }, 15000);
+        }
+
+        function castVote(person) {
+            // 미리 정해진 투표 결정에 따라 투표
+            person.vote = person.voteDecision;
+            person.status = 'voted';
+            
+            updatePersonDisplay(person);
+            
+            // 메시지 버블 표시
+            const message = person.vote === 'agree' ? '찬성!' : '반대!';
+            showMessageBubble(person, message);
+            
+            updateStatus();
+            checkConsensus();
+        }
+
+        function updatePersonDisplay(person) {
+            const personDiv = document.getElementById(`person-${person.id}`);
+            personDiv.classList.add('thinking');
+            
+            // 투표 표시
+            let voteDiv = personDiv.querySelector('.person-vote');
+            if (!voteDiv) {
+                voteDiv = document.createElement('div');
+                voteDiv.className = 'person-vote';
+                personDiv.appendChild(voteDiv);
+            }
+            
+            if (person.vote === 'agree') {
+                voteDiv.className = 'person-vote vote-agree';
+                voteDiv.textContent = '✓ 찬성';
+            } else {
+                voteDiv.className = 'person-vote vote-disagree';
+                voteDiv.textContent = '✗ 반대';
+            }
+            
+            // 상태 업데이트
+            const statusDiv = personDiv.querySelector('.person-status');
+            statusDiv.textContent = person.vote === 'agree' ? '찬성 투표' : '반대 투표';
+        }
+
+        function showFailedNode(person) {
+            const personDiv = document.getElementById(`person-${person.id}`);
+            personDiv.classList.add('failed');
+            
+            const statusDiv = personDiv.querySelector('.person-status');
+            statusDiv.textContent = '응답 없음 😵';
+            
+            person.status = 'failed';
+            updateStatus();
+        }
+
+        function showMessageBubble(person, message) {
+            const personDiv = document.getElementById(`person-${person.id}`);
+            const rect = personDiv.getBoundingClientRect();
+            const container = document.getElementById('messageLines');
+            const containerRect = container.getBoundingClientRect();
+            
+            const bubble = document.createElement('div');
+            bubble.className = 'message-bubble';
+            bubble.textContent = message;
+            bubble.style.left = (rect.left - containerRect.left + rect.width/2) + 'px';
+            bubble.style.top = (rect.top - containerRect.top - 30) + 'px';
+            
+            container.appendChild(bubble);
+            
+            setTimeout(() => {
+                if (container.contains(bubble)) {
+                    container.removeChild(bubble);
+                }
+            }, 3000);
+        }
+
+        function updateStatus() {
+            const agreeCount = people.filter(p => p.vote === 'agree').length;
+            const disagreeCount = people.filter(p => p.vote === 'disagree').length;
+            const waitingCount = people.filter(p => p.status === 'waiting').length;
+            const failedCount = people.filter(p => p.failed || p.status === 'failed').length;
+            
+            document.getElementById('agreeCount').textContent = `${agreeCount}명`;
+            document.getElementById('disagreeCount').textContent = `${disagreeCount}명`;
+            document.getElementById('waitingCount').textContent = `${waitingCount}명`;
+            document.getElementById('failedCount').textContent = `${failedCount}명`;
+            
+            const totalResponses = agreeCount + disagreeCount;
+            const totalExpected = people.filter(p => !p.failed).length;
+            
+            if (totalResponses > 0) {
+                const agreePercent = (agreeCount / totalExpected) * 100;
+                const disagreePercent = (disagreeCount / totalExpected) * 100;
+                
+                document.getElementById('agreeBar').style.width = `${agreePercent}%`;
+                document.getElementById('disagreeBar').style.width = `${disagreePercent}%`;
+                document.getElementById('agreeBar').textContent = `찬성 ${agreeCount}`;
+                document.getElementById('disagreeBar').textContent = `반대 ${disagreeCount}`;
+            }
+        }
+
+        function checkConsensus() {
+            const healthyPeople = people.filter(p => !p.failed && p.status !== 'failed');
+            const votedPeople = people.filter(p => p.vote !== null);
+            const agreeCount = people.filter(p => p.vote === 'agree').length;
+            const disagreeCount = people.filter(p => p.vote === 'disagree').length;
+            
+            // 모든 건강한 사람이 응답했는지 확인
+            if (votedPeople.length >= healthyPeople.length) {
+                if (disagreeCount === 0) {
+                    // 전원 찬성 (9명 모두)
+                    successfulConsensus();
+                } else {
+                    // 반대 의견 존재
+                    failedConsensus();
+                }
+            } else if (votedPeople.length > 0 && votedPeople.length < healthyPeople.length) {
+                // 일부만 응답한 상태 (15초 내 대기)
+                phase = 'waiting';
+                updatePhaseIndicator();
+            }
+        }
+
+        function successfulConsensus() {
+            phase = 'consensus_success';
+            simulationRunning = false;
+            
+            const healthyCount = people.filter(p => !p.failed).length;
+            const failedPerson = people.find(p => p.failed);
+            const currentScenario = people[0].scenario;
+            
+            const result = document.getElementById('finalResult');
+            result.className = 'final-result result-success';
+            result.style.display = 'block';
+            result.innerHTML = `
+                <h3>🎉 라운드 ${round} 합의 성공!</h3>
+                <p><strong>선택된 메뉴:</strong> ${currentProposal.emoji} ${currentProposal.name}</p>
+                <p><strong>결과:</strong> ${healthyCount}명 전체 찬성 (${failedPerson.name}님 장애로 제외)</p>
+                <p><strong>경과 시간:</strong> 15초 제한시간 내 완료</p>
+                <hr style="margin: 15px 0; opacity: 0.3;">
+                <p><strong>🍀 운이 좋았네요!</strong></p>
+                ${currentScenario === 'unanimous' ? 
+                    '<p>• 모든 정상 노드가 찬성하는 이상적인 시나리오였습니다</p>' :
+                    '<p>• 예상보다 빨리 모든 사람이 동의했습니다</p>'
+                }
+                <p><strong>🎯 하지만 FLP 정리상:</strong> 다음 라운드에서는 실패할 수도 있습니다!</p>
+            `;
+            
+            updatePhaseIndicator();
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('nextRoundBtn').style.display = 'inline-block';
+        }
+
+        function failedConsensus() {
+            phase = 'consensus_failed';
+            
+            const result = document.getElementById('finalResult');
+            result.className = 'final-result result-failed';
+            result.style.display = 'block';
+            result.innerHTML = `
+                <h3>🔄 합의 실패 - 다음 라운드 필요</h3>
+                <p>제안된 메뉴: ${currentProposal.emoji} ${currentProposal.name}</p>
+                <p>반대 의견이 있어 합의에 실패했습니다.</p>
+                <p>다른 사람이 새로운 메뉴를 제안해야 합니다.</p>
+            `;
+            
+            updatePhaseIndicator();
+            document.getElementById('nextRoundBtn').style.display = 'inline-block';
+        }
+
+        function timeoutSimulation() {
+            phase = 'timeout';
+            simulationRunning = false;
+            
+            const healthyCount = people.filter(p => !p.failed).length;
+            const votedCount = people.filter(p => p.vote !== null).length;
+            const agreeCount = people.filter(p => p.vote === 'agree').length;
+            const disagreeCount = people.filter(p => p.vote === 'disagree').length;
+            const noResponseCount = healthyCount - votedCount;
+            const failedPerson = people.find(p => p.failed);
+            
+            const result = document.getElementById('finalResult');
+            result.className = 'final-result result-timeout';
+            result.style.display = 'block';
+            
+            let timeoutReason = '';
+            if (noResponseCount > 0) {
+                timeoutReason = `${noResponseCount}명이 15초 내에 응답하지 못함`;
+            } else if (disagreeCount > 0) {
+                timeoutReason = `${disagreeCount}명의 반대 의견으로 합의 불가능`;
+            } else {
+                timeoutReason = '시간 내 완전한 합의 달성 실패';
+            }
+            
+            result.innerHTML = `
+                <h3>⏰ 15초 시간 초과 - 합의 실패!</h3>
+                <p><strong>라운드 ${round} 결과:</strong></p>
+                <p>• 찬성: ${agreeCount}명 | 반대: ${disagreeCount}명 | 무응답: ${noResponseCount}명 | 장애: 1명 (${failedPerson.name})</p>
+                <p><strong>실패 원인:</strong> ${timeoutReason}</p>
+                <hr style="margin: 15px 0; opacity: 0.3;">
+                <p><strong>🤔 현실적 딜레마:</strong></p>
+                ${noResponseCount > 0 ? 
+                    `<p>"${agreeCount}명이 찬성했는데 ${noResponseCount}명이 답이 없어요. 그냥 결정할까요?"</p>` :
+                    `<p>"찬성 ${agreeCount}명, 반대 ${disagreeCount}명... 어떻게 결정하죠?"</p>`
+                }
+                <p><strong>🎯 FLP 정리:</strong> 완전 비동기 환경에서는 "15초 내 반드시 합의"를 보장할 수 없습니다!</p>
+            `;
+            
+            updatePhaseIndicator();
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('nextRoundBtn').style.display = 'inline-block';
+        }
+
+        function nextRound() {
+            round++;
+            proposerIndex++;
+            phase = 'ready';
+            
+            // 이전 라운드 정리
+            document.querySelectorAll('.person').forEach(person => {
+                person.classList.remove('proposer', 'thinking', 'failed');
+                person.style.opacity = '1';
+                person.style.border = 'none';
+                const voteDiv = person.querySelector('.person-vote');
+                if (voteDiv) voteDiv.remove();
+            });
+            
+            document.getElementById('finalResult').style.display = 'none';
+            document.getElementById('nextRoundBtn').style.display = 'none';
+            document.getElementById('startBtn').disabled = false;
+            
+            // 시나리오 정보 제거
+            const scenarioDiv = document.getElementById('scenarioInfo');
+            if (scenarioDiv) scenarioDiv.remove();
+            
+            updateStatus();
+            updatePhaseIndicator();
+            
+            // 새로운 라운드를 위해 사람들 재초기화
+            initializePeople();
+        }
+
+        function startMessageAnimation() {
+            const messageInterval = setInterval(() => {
+                if (!simulationRunning || (phase !== 'voting' && phase !== 'waiting')) {
+                    clearInterval(messageInterval);
+                    return;
+                }
+                
+                const messageLines = document.getElementById('messageLines');
+                const line = document.createElement('div');
+                line.className = 'message-line';
+                line.style.top = Math.random() * 400 + 'px';
+                line.style.left = Math.random() * 600 + 'px';
+                messageLines.appendChild(line);
+                
+                setTimeout(() => {
+                    if (messageLines.contains(line)) {
+                        messageLines.removeChild(line);
+                    }
+                }, 2000);
+            }, 800);
+        }
+
+        function startTimer() {
+            timerInterval = setInterval(() => {
+                if (!simulationRunning) {
+                    clearInterval(timerInterval);
+                    return;
+                }
+                
+                const elapsed = Date.now() - startTime;
+                const seconds = Math.floor(elapsed / 1000);
+                const remaining = Math.max(0, 15 - seconds);
+                
+                document.getElementById('timer').textContent = 
+                    `⏰ 제한시간: 15초 | 경과: ${seconds}초 | 남은 시간: ${remaining}초`;
+                
+                // 시간이 얼마 남지 않으면 경고 색상
+                if (remaining <= 5 && remaining > 0) {
+                    document.getElementById('timer').style.color = '#ff6b6b';
+                } else if (remaining === 0) {
+                    document.getElementById('timer').style.color = '#ff4444';
+                    document.getElementById('timer').textContent = '⏰ 시간 초과! 15초 경과';
+                }
+            }, 100);
+        }
+
+        function updatePhaseIndicator() {
+            document.getElementById('phaseIndicator').textContent = phases[phase];
+        }
+
+        function resetSimulation() {
+            simulationRunning = false;
+            phase = 'ready';
+            currentProposal = null;
+            proposerIndex = 0;
+            round = 1;
+            
+            if (timerInterval) {
+                clearInterval(timerInterval);
+            }
+            
+            document.getElementById('timer').textContent = '⏰ 제한시간: 15초 | 경과 시간: 00:00';
+            document.getElementById('timer').style.color = '#FFD700';
+            document.getElementById('finalResult').style.display = 'none';
+            document.getElementById('proposalSection').style.display = 'none';
+            document.getElementById('nextRoundBtn').style.display = 'none';
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('currentProposalStatus').textContent = '없음';
+            
+            // 합의 바 리셋
+            document.getElementById('agreeBar').style.width = '0%';
+            document.getElementById('disagreeBar').style.width = '0%';
+            document.getElementById('agreeBar').textContent = '찬성 0';
+            document.getElementById('disagreeBar').textContent = '반대 0';
+            
+            // 메뉴 하이라이트 제거
+            document.querySelectorAll('.menu-option').forEach(option => {
+                option.classList.remove('current-proposal');
+            });
+            
+            const messageLines = document.getElementById('messageLines');
+            messageLines.innerHTML = '';
+            
+            updatePhaseIndicator();
+            initializePeople();
+            updateStatus();
+        }
+
+        // 초기화
+        window.onload = function() {
+            initializePeople();
+            updateStatus();
+        };
+    </script>
+</body>
+</html>
